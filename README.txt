@@ -23,36 +23,39 @@ label3:
   DEFINE acc
   POP
   PUSHINT 0
-  PUSHVARi
+  PUSHVAR i
   NUMEQUAL
   BFALSE label4
-  PUSHVARacc
+  PUSHVAR acc
   RET
 
 label4:
-  PUSHVARifac
-  PUSHVARacc
-  PUSHVARi
+  PUSHVAR ifac
+  PUSHVAR acc
+  PUSHVAR i
   MUL
-  PUSHVARi
+  PUSHVAR i
   PUSHINT 1
   SUB
-  PUSHVARifac
-  TAILCALL 3
+  TAILCALL 2
 
 label2:
   PUSHLABEL label3
   DEFINE ifac
-  PUSHVARifac
+  PUSHVAR ifac
+  PUSHSYM ifac
+  MAKECLOSURE 1
+  SET ifac
+
+  PUSHVAR ifac
   PUSHINT 1
-  PUSHVARn
-  PUSHVARifac
-  TAILCALL 3
+  PUSHVAR n
+  TAILCALL 2
 
 label0:
   PUSHLABEL label1
   DEFINE fac
-  PUSHVARfac
+  PUSHVAR fac
   PUSHINT 5
   CALL 1
   END
@@ -114,7 +117,7 @@ DEFINE <variable>
 0x03 (Symbolnummer)
 POPpt einen Wert vom Value-Stack, erzeugt eine neue Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert
 
-PUSHVAR<variable>
+PUSHVAR <variable>
 0x04 (Symbolnummer)
 Holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS, liest ihren Wert aus und PUSHt ihn auf den Value-Stack
 
@@ -195,7 +198,7 @@ PUSHt den Wert FALSE auf den Value-Stack
 MAKECLOSURE <number-of-pushed-arguments>
 0x17 (Parameteranzahl)
 Holt sich <number-of-pushed-arguments> Symbole vom Value-Stack, POPpt dann die IP eines Lambdas und gibt eine neu erzeugte Closure zurueck,
-die wie ein Lambda aufgerufen wird, aber die an MAKECLOSURE uebergebenen Werte (Symbolnr-Variable-Paare) bereits im Environment enthaelt.
+die wie ein Lambda aufgerufen wird, und dabei die an MAKECLOSURE uebergebenen Variablenwerte in der selben Reihenfolge PUSHT wie beim Aufruf von MAKECLOSURE.
 
 ERROR
 0xff

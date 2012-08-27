@@ -56,7 +56,8 @@ namespace org.lb.lbvm
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             object o = valueStack.Pop();
-            envStack.Peek().Set(SymbolNumber, new Variable(o));
+            if (o is Variable) envStack.Peek().Set(SymbolNumber, (Variable)o); // Link to variable, e.g. in Closure
+            else envStack.Peek().Set(SymbolNumber, new Variable(o));
             ip += Length;
         }
     }
@@ -230,13 +231,24 @@ namespace org.lb.lbvm
         protected override string Disassembled { get { return "CALL " + NumberOfPushedArguments; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
-            callStack.Push(new Call(ip + Length, NumberOfPushedArguments));
-
-            // TODO: If target is a closure, handle appropriately
-
             // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
             var vs = valueStack.ToArray();
-            ip = (int)vs[NumberOfPushedArguments];
+            object target = vs[NumberOfPushedArguments];
+            if (target is int)
+            {
+                callStack.Push(new Call(ip + Length, NumberOfPushedArguments));
+                ip = (int)vs[NumberOfPushedArguments];
+                return;
+            }
+            if (target is Closure)
+            {
+                Closure c = (Closure)target;
+                foreach (var value in c.ClosedOverValues) valueStack.Push(value);
+                callStack.Push(new Call(ip + Length, NumberOfPushedArguments + c.ClosedOverValues.Count));
+                ip = c.Target;
+                return;
+            }
+            throw new Exception("Invalid CALL target");
         }
     }
 
@@ -250,13 +262,25 @@ namespace org.lb.lbvm
         {
             envStack.Pop();
             int oldIp = callStack.Pop().Ip;
-            callStack.Push(new Call(oldIp, NumberOfPushedArguments));
-
-            // TODO: If target is a closure, handle appropriately
 
             // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
             var vs = valueStack.ToArray();
-            ip = (int)vs[NumberOfPushedArguments];
+            object target = vs[NumberOfPushedArguments];
+            if (target is int)
+            {
+                callStack.Push(new Call(oldIp, NumberOfPushedArguments));
+                ip = (int)vs[NumberOfPushedArguments];
+                return;
+            }
+            if (target is Closure)
+            {
+                Closure c = (Closure)target;
+                foreach (var value in c.ClosedOverValues) valueStack.Push(value);
+                callStack.Push(new Call(oldIp, NumberOfPushedArguments + c.ClosedOverValues.Count));
+                ip = c.Target;
+                return;
+            }
+            throw new Exception("Invalid CALL target");
         }
     }
 
@@ -334,15 +358,11 @@ namespace org.lb.lbvm
         protected override string Disassembled { get { return "MAKECLOSURE " + NumberOfPushedArguments; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
-            Environment closureEnv = new Environment();
+            List<Variable> values = new List<Variable>();
 
             for (int i = 0; i < NumberOfPushedArguments; ++i)
-            {
-                Symbol sym = (Symbol)valueStack.Pop();
-                Variable var = envStack.Peek().Get(sym.Number);
-                closureEnv.Set(sym.Number, var);
-            }
-            valueStack.Push(new Closure((int)valueStack.Pop(), closureEnv));
+                values.Add(envStack.Peek().Get(((Symbol)valueStack.Pop()).Number));
+            valueStack.Push(new Closure((int)valueStack.Pop(), values));
             ip += Length;
         }
     }
