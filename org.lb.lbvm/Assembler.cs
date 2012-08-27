@@ -78,7 +78,7 @@ namespace org.lb.lbvm
                 case "POP": AssertParameterCount(parameterCount, 0, opcode); Emit(0x01); break;
                 case "PUSHINT": AssertParameterCount(parameterCount, 1, opcode); Emit(0x02); EmitInt(int.Parse(line[1])); break;
                 case "DEFINE": AssertParameterCount(parameterCount, 1, opcode); Emit(0x03); EmitSymbol(line[1]); break;
-                case "GET": AssertParameterCount(parameterCount, 1, opcode); Emit(0x04); EmitSymbol(line[1]); break;
+                case "PUSHVAR": AssertParameterCount(parameterCount, 1, opcode); Emit(0x04); EmitSymbol(line[1]); break;
                 case "NUMEQUAL": AssertParameterCount(parameterCount, 0, opcode); Emit(0x05); break;
                 case "ADD": AssertParameterCount(parameterCount, 0, opcode); Emit(0x06); break;
                 case "SUB": AssertParameterCount(parameterCount, 0, opcode); Emit(0x07); break;
@@ -91,9 +91,13 @@ namespace org.lb.lbvm
                 case "CALL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x0e); EmitInt(int.Parse(line[1])); break;
                 case "TAILCALL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x0f); EmitInt(int.Parse(line[1])); break;
                 case "JMP": AssertParameterCount(parameterCount, 1, opcode); Emit(0x10); EmitLabel(line[1]); break;
-                case "GETLABEL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x11); EmitLabel(line[1]); break;
+                case "PUSHLABEL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x11); EmitLabel(line[1]); break;
                 case "IMOD": AssertParameterCount(parameterCount, 0, opcode); Emit(0x12); break;
                 case "SET": AssertParameterCount(parameterCount, 1, opcode); Emit(0x13); EmitSymbol(line[1]); break;
+                case "PUSHSYM": AssertParameterCount(parameterCount, 1, opcode); Emit(0x14); EmitSymbol(line[1]); break;
+                case "PUSHTRUE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x15); break;
+                case "PUSHFALSE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x16); break;
+                case "MAKECLOSURE": AssertParameterCount(parameterCount, 1, opcode); Emit(0x17); EmitInt(int.Parse(line[1])); break;
                 case "ERROR": AssertParameterCount(parameterCount, 0, opcode); Emit(0xff); break;
                 default: throw new AssemblerException("Invalid opcode: " + opcode);
             }

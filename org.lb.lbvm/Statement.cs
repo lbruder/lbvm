@@ -61,13 +61,13 @@ namespace org.lb.lbvm
         }
     }
 
-    public sealed class GetStatement : Statement
+    public sealed class PushvarStatement : Statement
     {
-        internal GetStatement(int symbolNumber, string symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
+        internal PushvarStatement(int symbolNumber, string symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
         private readonly int SymbolNumber;
         private readonly string Symbol;
         public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "GET " + Symbol; } }
+        protected override string Disassembled { get { return "PUSHVAR " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(envStack.Peek().Get(SymbolNumber).GetValue());
@@ -232,6 +232,8 @@ namespace org.lb.lbvm
         {
             callStack.Push(new Call(ip + Length, NumberOfPushedArguments));
 
+            // TODO: If target is a closure, handle appropriately
+
             // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
             var vs = valueStack.ToArray();
             ip = (int)vs[NumberOfPushedArguments];
@@ -249,6 +251,8 @@ namespace org.lb.lbvm
             envStack.Pop();
             int oldIp = callStack.Pop().Ip;
             callStack.Push(new Call(oldIp, NumberOfPushedArguments));
+
+            // TODO: If target is a closure, handle appropriately
 
             // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
             var vs = valueStack.ToArray();
@@ -268,12 +272,12 @@ namespace org.lb.lbvm
         }
     }
 
-    public sealed class GetlabelStatement : Statement
+    public sealed class PushlabelStatement : Statement
     {
-        internal GetlabelStatement(int number) { this.Number = number; }
+        internal PushlabelStatement(int number) { this.Number = number; }
         private readonly int Number;
         public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "GETLABEL 0x" + Number.ToString("x4"); } }
+        protected override string Disassembled { get { return "PUSHLABEL 0x" + Number.ToString("x4"); } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(Number);
@@ -292,6 +296,53 @@ namespace org.lb.lbvm
         {
             object o = valueStack.Pop();
             envStack.Peek().Get(SymbolNumber).SetValue(o);
+            ip += Length;
+        }
+    }
+
+    public sealed class PushsymStatement : Statement
+    {
+        internal PushsymStatement(int symbolNumber, string symbol) { this.Symbol = new Symbol(symbolNumber, symbol); }
+        private readonly Symbol Symbol;
+        public override int Length { get { return 5; } }
+        protected override string Disassembled { get { return "PUSHSYM " + Symbol; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            valueStack.Push(Symbol);
+            ip += Length;
+        }
+    }
+
+    public sealed class PushboolStatement : Statement
+    {
+        internal PushboolStatement(bool value) { this.Value = value; }
+        private readonly bool Value;
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "PUSH " + (Value ? "TRUE" : "FALSE"); } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            valueStack.Push(Value);
+            ip += Length;
+        }
+    }
+
+    public sealed class MakeClosureStatement : Statement
+    {
+        internal MakeClosureStatement(int numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
+        private readonly int NumberOfPushedArguments;
+        public override int Length { get { return 5; } }
+        protected override string Disassembled { get { return "MAKECLOSURE " + NumberOfPushedArguments; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            Environment closureEnv = new Environment();
+
+            for (int i = 0; i < NumberOfPushedArguments; ++i)
+            {
+                Symbol sym = (Symbol)valueStack.Pop();
+                Variable var = envStack.Peek().Get(sym.Number);
+                closureEnv.Set(sym.Number, var);
+            }
+            valueStack.Push(new Closure((int)valueStack.Pop(), closureEnv));
             ip += Length;
         }
     }

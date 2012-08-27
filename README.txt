@@ -8,61 +8,54 @@
 
 --------------------------------------------------------------------------------
 
-0000 10 90 00 00 00                 JMP label4
+  JMP label0
 
-0005                              label2:
-0005 0c 01 00 00 00 00 00 00 00     ENTER 1 fac
-000e 03 01 00 00 00                 DEFINE n
-0013 01                             POP
-0014 10 6d 00 00 00                 JMP label3
+label1:
+  ENTER 1 fac
+  DEFINE n
+  POP
+  JMP label2
 
-0019                              label0:
-0019 0c 03 00 00 00 02 00 00 00     ENTER 3 ifac
-0022 03 02 00 00 00                 DEFINE ifac
-0027 03 03 00 00 00                 DEFINE i
-002c 03 04 00 00 00                 DEFINE acc
-0031 01                             POP
-0032 02 00 00 00 00                 PUSHINT 0
-0037 04 03 00 00 00                 GET i
-003c 05                             NUMEQUAL
-003d 0b 48 00 00 00                 BFALSE label1
-0042 04 04 00 00 00                 GET acc
-0047 0d                             RET
+label3:
+  ENTER 3 ifac
+  DEFINE ifac
+  DEFINE i
+  DEFINE acc
+  POP
+  PUSHINT 0
+  PUSHVARi
+  NUMEQUAL
+  BFALSE label4
+  PUSHVARacc
+  RET
 
-0048                              label1:
-0048 04 02 00 00 00                 GET ifac
-004d 04 04 00 00 00                 GET acc
-0052 04 03 00 00 00                 GET i
-0057 08                             MUL
-0058 04 03 00 00 00                 GET i
-005d 02 01 00 00 00                 PUSHINT 1
-0062 07                             SUB
-0063 04 02 00 00 00                 GET ifac
-0068 0f 03 00 00 00                 TAILCALL 3
+label4:
+  PUSHVARifac
+  PUSHVARacc
+  PUSHVARi
+  MUL
+  PUSHVARi
+  PUSHINT 1
+  SUB
+  PUSHVARifac
+  TAILCALL 3
 
-006d                              label3:
-006d 11 19 00 00 00                 GETLABEL label0
-0072 03 02 00 00 00                 DEFINE ifac
-0077 04 02 00 00 00                 GET ifac
-007c 02 01 00 00 00                 PUSHINT 1
-0081 04 01 00 00 00                 GET n
-0086 04 02 00 00 00                 GET ifac
-008b 0f 03 00 00 00                 TAILCALL 3
+label2:
+  PUSHLABEL label3
+  DEFINE ifac
+  PUSHVARifac
+  PUSHINT 1
+  PUSHVARn
+  PUSHVARifac
+  TAILCALL 3
 
-0090                              label4:
-0090 11 05 00 00 00                 GETLABEL label2
-0095 03 00 00 00 00                 DEFINE fac
-009a 04 00 00 00 00                 GET fac
-009f 02 05 00 00 00                 PUSHINT 5
-00a4 0e 01 00 00 00                 CALL 1
-00a9 00                             END
-
-Symboltabelle:
-00 fac
-01 n
-02 ifac
-03 i
-04 acc
+label0:
+  PUSHLABEL label1
+  DEFINE fac
+  PUSHVARfac
+  PUSHINT 5
+  CALL 1
+  END
 
 --------------------------------------------------------------------------------
 
@@ -121,7 +114,7 @@ DEFINE <variable>
 0x03 (Symbolnummer)
 POPpt einen Wert vom Value-Stack, erzeugt eine neue Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert
 
-GET <variable>
+PUSHVAR<variable>
 0x04 (Symbolnummer)
 Holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS, liest ihren Wert aus und PUSHt ihn auf den Value-Stack
 
@@ -175,7 +168,7 @@ JMP <IP>
 0x10 (IP)
 Springt direkt an die angegebene Adresse.
 
-GETLABEL <IP>
+PUSHLABEL <IP>
 0x11 (number)
 Wie PUSHINT, fuer Disassembler
 
@@ -186,6 +179,23 @@ POPpt zwei Werte vom Value-Stack, konvertiert beide in Integer, dividiert TOS-1 
 SET <variable>
 0x13 (Symbolnummer)
 POPpt einen Wert vom Value-Stack, holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert
+
+PUSHSYM <variable>
+0x14 (Symbolnummer)
+PUSHt das Symbol mit der angegebenen Symbolnummer auf den Value-Stack
+
+PUSHTRUE
+0x15
+PUSHt den Wert TRUE auf den Value-Stack
+
+PUSHFALSE
+0x16
+PUSHt den Wert FALSE auf den Value-Stack
+
+MAKECLOSURE <number-of-pushed-arguments>
+0x17 (Parameteranzahl)
+Holt sich <number-of-pushed-arguments> Symbole vom Value-Stack, POPpt dann die IP eines Lambdas und gibt eine neu erzeugte Closure zurueck,
+die wie ein Lambda aufgerufen wird, aber die an MAKECLOSURE uebergebenen Werte (Symbolnr-Variable-Paare) bereits im Environment enthaelt.
 
 ERROR
 0xff

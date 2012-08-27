@@ -33,10 +33,10 @@ namespace Test
             string[] testSource = {
                 "JMP label4",
                 "label0:", "ENTER 1 fac", "DEFINE n", "POP", "JMP label3",
-                "label1:", "ENTER 3 ifac", "DEFINE ifac", "DEFINE i", "DEFINE acc", "POP", "PUSHINT 0", "GET i", "NUMEQUAL", "BFALSE label2", "GET acc", "RET",
-                "label2:", "GET ifac", "GET acc", "GET i", "MUL", "GET i", "PUSHINT 1", "SUB", "GET ifac", "TAILCALL 3",
-                "label3:", "GETLABEL label1", "DEFINE ifac", "GET ifac", "PUSHINT 1", "GET n", "GET ifac", "TAILCALL 3",
-                "label4:", "GETLABEL label0", "DEFINE fac", "GET fac", "PUSHINT 10", "CALL 1", "END" };
+                "label1:", "ENTER 3 ifac", "DEFINE ifac", "DEFINE i", "DEFINE acc", "POP", "PUSHINT 0", "PUSHVAR i", "NUMEQUAL", "BFALSE label2", "PUSHVAR acc", "RET",
+                "label2:", "PUSHVAR ifac", "PUSHVAR acc", "PUSHVAR i", "MUL", "PUSHVAR i", "PUSHINT 1", "SUB", "PUSHVAR ifac", "TAILCALL 3",
+                "label3:", "PUSHLABEL label1", "DEFINE ifac", "PUSHVAR ifac", "PUSHINT 1", "PUSHVAR n", "PUSHVAR ifac", "TAILCALL 3",
+                "label4:", "PUSHLABEL label0", "DEFINE fac", "PUSHVAR fac", "PUSHINT 10", "CALL 1", "END" };
 
             using (var stream = File.Create("test.lbvm"))
                 org.lb.lbvm.Assembler.Assemble(testSource).ToStream(stream);

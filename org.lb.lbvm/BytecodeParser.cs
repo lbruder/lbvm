@@ -61,7 +61,7 @@ namespace org.lb.lbvm
                 case 0x01: statements.Add(new PopStatement()); return;
                 case 0x02: statements.Add(new PushintStatement(ReadInt())); return;
                 case 0x03: tmp = ReadInt(); statements.Add(new DefineStatement(tmp, GetSymbolTableEntry(tmp))); return;
-                case 0x04: tmp = ReadInt(); statements.Add(new GetStatement(tmp, GetSymbolTableEntry(tmp))); return;
+                case 0x04: tmp = ReadInt(); statements.Add(new PushvarStatement(tmp, GetSymbolTableEntry(tmp))); return;
                 case 0x05: statements.Add(new NumeqStatement()); return;
                 case 0x06: statements.Add(new AddStatement()); return;
                 case 0x07: statements.Add(new SubStatement()); return;
@@ -74,9 +74,13 @@ namespace org.lb.lbvm
                 case 0x0e: statements.Add(new CallStatement(ReadInt())); return;
                 case 0x0f: statements.Add(new TailcallStatement(ReadInt())); return;
                 case 0x10: statements.Add(new JmpStatement(ReadInt())); return;
-                case 0x11: statements.Add(new GetlabelStatement(ReadInt())); return;
+                case 0x11: statements.Add(new PushlabelStatement(ReadInt())); return;
                 case 0x12: statements.Add(new ImodStatement()); return;
                 case 0x13: tmp = ReadInt(); statements.Add(new SetStatement(tmp, GetSymbolTableEntry(tmp))); return;
+                case 0x14: tmp = ReadInt(); statements.Add(new PushsymStatement(tmp, GetSymbolTableEntry(tmp))); return;
+                case 0x15: statements.Add(new PushboolStatement(true)); return;
+                case 0x16: statements.Add(new PushboolStatement(false)); return;
+                case 0x17: statements.Add(new MakeClosureStatement(ReadInt())); return;
                 default:
                     throw new InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
