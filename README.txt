@@ -115,7 +115,8 @@ PUSHt einen konstanten Integer-Wert auf den Value-Stack
 
 DEFINE <variable>
 0x03 (Symbolnummer)
-POPpt einen Wert vom Value-Stack, erzeugt eine neue Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert
+POPpt einen Wert vom Value-Stack, erzeugt eine neue Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert.
+Falls der gePOPpte Wert selbst eine Variable ist, wird lediglich eine Referenz auf diese Variable im Environment-TOS abgelegt, statt eine neue Variable zu erzeugen.
 
 PUSHVAR <variable>
 0x04 (Symbolnummer)
