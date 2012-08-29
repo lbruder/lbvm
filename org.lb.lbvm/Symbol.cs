@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace org.lb.lbvm
+﻿namespace org.lb.lbvm
 {
     internal sealed class Symbol
     {
