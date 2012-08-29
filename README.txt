@@ -8,57 +8,40 @@
 
 --------------------------------------------------------------------------------
 
-  JMP label0
+FUNCTION fac (n)
 
-label1:
-  ENTER 1 fac
-  DEFINE n
-  POP
-  JMP label2
+  FUNCTION ifac (acc i) (ifac)
 
-label3:
-  ENTER 3 ifac
-  DEFINE ifac
-  DEFINE i
-  DEFINE acc
-  POP
-  PUSHINT 0
-  PUSHVAR i
-  NUMEQUAL
-  BFALSE label4
-  PUSHVAR acc
-  RET
+    PUSHINT 0
+    PUSHVAR i
+    NUMEQUAL
+    BFALSE label0
+    PUSHVAR acc
+    RET
 
-label4:
-  PUSHVAR ifac
-  PUSHVAR acc
-  PUSHVAR i
-  MUL
-  PUSHVAR i
-  PUSHINT 1
-  SUB
-  TAILCALL 2
+  label0:
+    PUSHVAR ifac
+    PUSHVAR acc
+    PUSHVAR i
+    MUL
+    PUSHVAR i
+    PUSHINT 1
+    SUB
+    TAILCALL 2
 
-label2:
-  PUSHLABEL label3
-  DEFINE ifac
-  PUSHVAR ifac
-  PUSHSYM ifac
-  MAKECLOSURE 1
-  SET ifac
+  ENDFUNCTION
 
   PUSHVAR ifac
   PUSHINT 1
   PUSHVAR n
   TAILCALL 2
 
-label0:
-  PUSHLABEL label1
-  DEFINE fac
-  PUSHVAR fac
-  PUSHINT 5
-  CALL 1
-  END
+ENDFUNCTION
+
+PUSHVAR fac
+PUSHINT 5
+CALL 1
+END
 
 --------------------------------------------------------------------------------
 
@@ -90,6 +73,8 @@ Datenbereich:
 
 Aufbau Prototyp:
 
+- Little Endian
+- Integer-Werte sind IMMER signed, 32 Bit
 - Drei Stacks: Callstack (Paare von IP/number-of-arguments), Environment, Value-Stack
 - Bei Programmstart enthaelt der Environment-Stack bereits ein Environment (global), die anderen Stacks sind leer
 - Symboltabelle mit Zuordnung von Symbolnummer zu Name, nur fuer Debugging-Zwecke
@@ -97,9 +82,42 @@ Aufbau Prototyp:
 
 --------------------------------------------------------------------------------
 
-Aufbau Bytecode:
-- Little Endian
-- Integer-Werte sind IMMER signed, 32 Bit
+Assembler-Direktiven:
+
+labelx:
+Definiert eine Sprungmarke
+
+FUNCTION name (parameters) &optional (closing-variables)
+Pusht die Labels label0 und label1 auf einen "Funktions-Stack" im Assembler, expandiert zu
+   JMP label0
+ label1:
+   ENTER (length parameters + length closing-variables) fac
+   DEFINE parameter0
+   DEFINE parameter1
+   ...
+   DEFINE parameterN
+   DEFINE closing-variable0
+   DEFINE closing-variable1
+   ...
+   DEFINE closing-variableN
+   POP
+
+ENDFUNCTION
+Poppt die Labels label0 und label1 vom "Funktions-Stack" im Assembler, expandiert zu
+ label0:
+   PUSHLABEL label1
+   DEFINE name
+
+Falls zuvor eine Closure definiert wurde, wird zusaetzlich folgendes angehaengt:
+  PUSHVAR name
+  PUSHSYM closing-variable0
+  PUSHSYM closing-variable1
+  ...
+  PUSHSYM closing-variableN
+  MAKECLOSURE (length closing-variablen)
+  SET name
+
+--------------------------------------------------------------------------------
 
 END
 0x00
