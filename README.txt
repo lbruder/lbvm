@@ -8,9 +8,9 @@
 
 --------------------------------------------------------------------------------
 
-FUNCTION fac (n)
+FUNCTION fac n
 
-  FUNCTION ifac (acc i) (ifac)
+  FUNCTION ifac acc i &closingover ifac
 
     PUSHINT 0
     PUSHVAR i
@@ -87,7 +87,7 @@ Assembler-Direktiven:
 labelx:
 Definiert eine Sprungmarke
 
-FUNCTION name (parameters) &optional (closing-variables)
+FUNCTION name parameters [&closingover closing-variables]
 Pusht die Labels label0 und label1 auf einen "Funktions-Stack" im Assembler, expandiert zu
    JMP label0
  label1:

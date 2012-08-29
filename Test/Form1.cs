@@ -38,13 +38,21 @@ namespace Test
             //    "label3:", "PUSHLABEL label1", "DEFINE ifac", "PUSHVAR ifac", "PUSHINT 1", "PUSHVAR n", "PUSHVAR ifac", "TAILCALL 3",
             //    "label4:", "PUSHLABEL label0", "DEFINE fac", "PUSHVAR fac", "PUSHINT 10", "CALL 1", "END" };
 
+            //string[] testSource = {
+            //    "JMP label0",
+            //    "label1:","ENTER 1 fac","DEFINE n","POP","JMP label2",
+            //    "label3:","ENTER 3 ifac","DEFINE ifac","DEFINE i","DEFINE acc","POP","PUSHINT 0","PUSHVAR i","NUMEQUAL","BFALSE label4","PUSHVAR acc","RET",
+            //    "label4:","PUSHVAR ifac","PUSHVAR acc","PUSHVAR i","MUL","PUSHVAR i","PUSHINT 1","SUB","TAILCALL 2",
+            //    "label2:","PUSHLABEL label3","DEFINE ifac","PUSHVAR ifac","PUSHSYM ifac","MAKECLOSURE 1","SET ifac","PUSHVAR ifac","PUSHINT 1","PUSHVAR n","TAILCALL 2",
+            //    "label0:","PUSHLABEL label1","DEFINE fac","PUSHVAR fac","PUSHINT 5","CALL 1","END"};
+
             string[] testSource = {
-                "JMP label0",
-                "label1:","ENTER 1 fac","DEFINE n","POP","JMP label2",
-                "label3:","ENTER 3 ifac","DEFINE ifac","DEFINE i","DEFINE acc","POP","PUSHINT 0","PUSHVAR i","NUMEQUAL","BFALSE label4","PUSHVAR acc","RET",
-                "label4:","PUSHVAR ifac","PUSHVAR acc","PUSHVAR i","MUL","PUSHVAR i","PUSHINT 1","SUB","TAILCALL 2",
-                "label2:","PUSHLABEL label3","DEFINE ifac","PUSHVAR ifac","PUSHSYM ifac","MAKECLOSURE 1","SET ifac","PUSHVAR ifac","PUSHINT 1","PUSHVAR n","TAILCALL 2",
-                "label0:","PUSHLABEL label1","DEFINE fac","PUSHVAR fac","PUSHINT 5","CALL 1","END"};
+                "FUNCTION fac n",
+                "FUNCTION ifac acc i &closingover ifac","PUSHINT 0","PUSHVAR i","NUMEQUAL","BFALSE label0","PUSHVAR acc","RET",
+                "label0:","PUSHVAR ifac","PUSHVAR acc","PUSHVAR i","MUL","PUSHVAR i","PUSHINT 1","SUB","TAILCALL 2","ENDFUNCTION",
+                "PUSHVAR ifac","PUSHINT 1","PUSHVAR n","TAILCALL 2","ENDFUNCTION",
+                "PUSHVAR fac","PUSHINT 5","CALL 1","END"
+            };
 
             using (var stream = File.Create("test.lbvm"))
                 org.lb.lbvm.Assembler.Assemble(testSource).ToStream(stream);

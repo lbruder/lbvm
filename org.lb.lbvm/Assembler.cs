@@ -53,12 +53,102 @@ namespace org.lb.lbvm
 
         private void ParseLine(string line)
         {
+            if (line.ToUpper().StartsWith("FUNCTION"))
+            {
+                HandleFunction(line.Split());
+                return;
+            }
+
+            if (line.ToUpper().StartsWith("ENDFUNCTION"))
+            {
+                HandleEndFunction(line.Split());
+                return;
+            }
+
             if (line.EndsWith(":"))
             {
                 AddLabel(line.TrimEnd(':'));
                 return;
             }
+
             AddStatement(line.Split(' '));
+        }
+
+        private enum Mode
+        {
+            Parameter,
+            ClosingOverVariable
+        };
+
+        private sealed class FunctionStatement
+        {
+            public readonly string LabelStart;
+            public readonly string LabelEnd;
+            public readonly string Name;
+            public readonly List<string> Parameters;
+            public readonly List<string> ClosingOverVariables;
+            public FunctionStatement(string name, string labelStart, string labelEnd, List<string> parameters, List<string> closingOverVariables)
+            {
+                LabelStart = labelStart;
+                LabelEnd = labelEnd;
+                Name = name;
+                Parameters = parameters;
+                ClosingOverVariables = closingOverVariables;
+            }
+        }
+
+        private readonly Stack<FunctionStatement> functionStatements = new Stack<FunctionStatement>();
+
+        private void HandleFunction(string[] line)
+        {
+            if (line.Length < 1) throw new AssemblerException("Syntax error in FUNCTION definition");
+            string name = line[1];
+            string labelStart = generateLabel();
+            string labelEnd = generateLabel();
+            List<string> parameters = new List<string>();
+            List<string> closingOverVariables = new List<string>();
+            Mode mode = Mode.Parameter;
+            for (int i = 2; i < line.Length; ++i)
+            {
+                if (line[i].ToLower() == "&closingover") mode = Mode.ClosingOverVariable;
+                else if (mode == Mode.Parameter) parameters.Add(line[i]);
+                else if (mode == Mode.ClosingOverVariable) closingOverVariables.Add(line[i]);
+                else throw new AssemblerException("Internal error 1 in assembler");
+            }
+            functionStatements.Push(new FunctionStatement(name, labelStart, labelEnd, parameters, closingOverVariables));
+
+            ParseLine("JMP " + labelEnd);
+            ParseLine(labelStart + ":");
+            ParseLine("ENTER " + (parameters.Count + closingOverVariables.Count) + " " + name);
+            var closingReversed = new List<string>(closingOverVariables);
+            closingReversed.Reverse();
+            foreach (string v in closingReversed) ParseLine("DEFINE " + v);
+            var parametersReversed = new List<string>(parameters);
+            parametersReversed.Reverse();
+            foreach (string p in parametersReversed) ParseLine("DEFINE " + p);
+            ParseLine("POP");
+        }
+
+        private int generatedLabelNumber;
+
+        private string generateLabel()
+        {
+            return "##generated_label##" + generatedLabelNumber++;
+        }
+
+        private void HandleEndFunction(string[] line)
+        {
+            var functionToEnd = functionStatements.Pop();
+            ParseLine(functionToEnd.LabelEnd + ":");
+            ParseLine("PUSHLABEL " + functionToEnd.LabelStart);
+            ParseLine("DEFINE " + functionToEnd.Name);
+            if (functionToEnd.ClosingOverVariables.Count > 0)
+            {
+                ParseLine("PUSHVAR " + functionToEnd.Name);
+                foreach (var v in functionToEnd.ClosingOverVariables) ParseLine("PUSHSYM " + v);
+                ParseLine("MAKECLOSURE " + functionToEnd.ClosingOverVariables.Count);
+                ParseLine("SET " + functionToEnd.Name);
+            }
         }
 
         private void AddLabel(string label)
