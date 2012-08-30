@@ -85,14 +85,12 @@ namespace org.lb.lbvm
             public readonly string LabelStart;
             public readonly string LabelEnd;
             public readonly string Name;
-            public readonly List<string> Parameters;
             public readonly List<string> ClosingOverVariables;
-            public FunctionStatement(string name, string labelStart, string labelEnd, List<string> parameters, List<string> closingOverVariables)
+            public FunctionStatement(string name, string labelStart, string labelEnd, List<string> closingOverVariables)
             {
                 LabelStart = labelStart;
                 LabelEnd = labelEnd;
                 Name = name;
-                Parameters = parameters;
                 ClosingOverVariables = closingOverVariables;
             }
         }
@@ -115,7 +113,7 @@ namespace org.lb.lbvm
                 else if (mode == Mode.ClosingOverVariable) closingOverVariables.Add(line[i]);
                 else throw new AssemblerException("Internal error 1 in assembler");
             }
-            functionStatements.Push(new FunctionStatement(name, labelStart, labelEnd, parameters, closingOverVariables));
+            functionStatements.Push(new FunctionStatement(name, labelStart, labelEnd, closingOverVariables));
 
             ParseLine("JMP " + labelEnd);
             ParseLine(labelStart + ":");

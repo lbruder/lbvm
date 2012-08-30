@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 // ReSharper disable LocalizableElement
@@ -17,10 +18,11 @@ namespace Test
         {
             try
             {
-                AssembleAndWriteFile();
-                var program = ReadFile();
-                Disassemble(program);
-                Run(program);
+                CompileFromScheme();
+                //AssembleAndWriteFile();
+                //var program = ReadFile();
+                //Disassemble(program);
+                //Run(program);
             }
             catch (Exception ex)
             {
@@ -28,24 +30,22 @@ namespace Test
             }
         }
 
+        private org.lb.lbvm.Program CompileFromScheme()
+        {
+            const string schemeSource = "(define (fac n)                   " +
+                                        "  (define (ifac acc i)            " +
+                                        "    (if (= 0 i)                   " +
+                                        "        acc                       " +
+                                        "        (ifac (* acc i) (- i 1))))" +
+                                        "  (ifac 1 n))                     " +
+                                        "(fac 5)                           ";
+
+            textBox1.Text = string.Join("\r\n", org.lb.lbvm.scheme.Compiler.Compile(schemeSource));
+            return null;
+        }
+
         private static void AssembleAndWriteFile()
         {
-            //string[] testSource = {
-            //    "JMP label4",
-            //    "label0:", "ENTER 1 fac", "DEFINE n", "POP", "JMP label3",
-            //    "label1:", "ENTER 3 ifac", "DEFINE ifac", "DEFINE i", "DEFINE acc", "POP", "PUSHINT 0", "PUSHVAR i", "NUMEQUAL", "BFALSE label2", "PUSHVAR acc", "RET",
-            //    "label2:", "PUSHVAR ifac", "PUSHVAR acc", "PUSHVAR i", "MUL", "PUSHVAR i", "PUSHINT 1", "SUB", "PUSHVAR ifac", "TAILCALL 3",
-            //    "label3:", "PUSHLABEL label1", "DEFINE ifac", "PUSHVAR ifac", "PUSHINT 1", "PUSHVAR n", "PUSHVAR ifac", "TAILCALL 3",
-            //    "label4:", "PUSHLABEL label0", "DEFINE fac", "PUSHVAR fac", "PUSHINT 10", "CALL 1", "END" };
-
-            //string[] testSource = {
-            //    "JMP label0",
-            //    "label1:","ENTER 1 fac","DEFINE n","POP","JMP label2",
-            //    "label3:","ENTER 3 ifac","DEFINE ifac","DEFINE i","DEFINE acc","POP","PUSHINT 0","PUSHVAR i","NUMEQUAL","BFALSE label4","PUSHVAR acc","RET",
-            //    "label4:","PUSHVAR ifac","PUSHVAR acc","PUSHVAR i","MUL","PUSHVAR i","PUSHINT 1","SUB","TAILCALL 2",
-            //    "label2:","PUSHLABEL label3","DEFINE ifac","PUSHVAR ifac","PUSHSYM ifac","MAKECLOSURE 1","SET ifac","PUSHVAR ifac","PUSHINT 1","PUSHVAR n","TAILCALL 2",
-            //    "label0:","PUSHLABEL label1","DEFINE fac","PUSHVAR fac","PUSHINT 5","CALL 1","END"};
-
             string[] testSource = {
                 "FUNCTION fac n",
                 "FUNCTION ifac acc i &closingover ifac","PUSHINT 0","PUSHVAR i","NUMEQUAL","BFALSE label0","PUSHVAR acc","RET",

@@ -49,6 +49,9 @@
     <Compile Include="ProgramFileReader.cs" />
     <Compile Include="ProgramFileWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="scheme\Compiler.cs" />
+    <Compile Include="scheme\Reader.cs" />
+    <Compile Include="scheme\Symbol.cs" />
     <Compile Include="Statement.cs" />
     <Compile Include="Symbol.cs" />
     <Compile Include="Variable.cs" />
