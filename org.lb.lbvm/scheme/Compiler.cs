@@ -104,7 +104,7 @@ namespace org.lb.lbvm.scheme
 
         private void CompileFunctionDefinition(IEnumerable<object> value, List<object> functionNameAndParameters, List<object> body)
         {
-            if (!functionNameAndParameters.All(i => i is Symbol)) throw new CompilerException("Syntax error in function definition: Not all values are symbols");
+            if (!functionNameAndParameters.All(i => i is Symbol)) throw new CompilerException("Syntax error in function definition: Not all parameter names are symbols");
 
             string name = ((Symbol)functionNameAndParameters[0]).Name;
             List<string> parameters = functionNameAndParameters.Skip(1).Select(i => ((Symbol)i).Name).ToList();
@@ -126,8 +126,9 @@ namespace org.lb.lbvm.scheme
 
         private IEnumerable<string> FindFreeVariablesInLambda(List<string> parameters, List<object> body)
         {
+            // TODO!!!
             if (parameters.Count() == 2) return new List<string>{"ifac"};
-            return new List<string>(); // TODO
+            return new List<string>();
         }
 
         private void CompileVariableDefinition(List<object> value)

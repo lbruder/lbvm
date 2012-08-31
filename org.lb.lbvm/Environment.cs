@@ -11,8 +11,9 @@ namespace org.lb.lbvm
             values[symbolNumber] = value;
         }
 
-        public Variable Get(int symbolNumber)
+        public Variable Get(int symbolNumber, string symbolName)
         {
+            if (!values.ContainsKey(symbolNumber)) throw new RuntimeException("Unknown variable '" + symbolName + "'");
             return values[symbolNumber];
         }
     }

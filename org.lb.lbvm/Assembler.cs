@@ -203,11 +203,7 @@ namespace org.lb.lbvm
 
         private void EmitInt(int valueAsInt)
         {
-            for (int i = 0; i < 4; ++i)
-            {
-                Emit((byte)(valueAsInt % 256));
-                valueAsInt /= 256;
-            }
+            foreach (byte b in BitConverter.GetBytes(valueAsInt)) Emit(b);
         }
 
         private void EmitSymbol(string symbol)

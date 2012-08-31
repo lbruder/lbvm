@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 // ReSharper disable RedundantAssignment
@@ -71,7 +70,7 @@ namespace org.lb.lbvm
         protected override string Disassembled { get { return "PUSHVAR " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
-            valueStack.Push(envStack.Peek().Get(SymbolNumber).GetValue());
+            valueStack.Push(envStack.Peek().Get(SymbolNumber, Symbol).GetValue());
             ip += Length;
         }
     }
@@ -85,7 +84,7 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new Exception("HACK: Numeq -- Check for non-Integer values");
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numeq -- Check for non-Integer values");
             valueStack.Push((int)o1 == (int)o2);
             ip += Length;
         }
@@ -100,7 +99,7 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new Exception("HACK: Add -- Check for non-Integer values");
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Add -- Check for non-Integer values");
             valueStack.Push((int)o1 + (int)o2);
             ip += Length;
         }
@@ -115,7 +114,7 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new Exception("HACK: Sub -- Check for non-Integer values");
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Sub -- Check for non-Integer values");
             valueStack.Push((int)o2 - (int)o1);
             ip += Length;
         }
@@ -130,7 +129,7 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new Exception("HACK: Mul -- Check for non-Integer values");
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Mul -- Check for non-Integer values");
             valueStack.Push((int)o1 * (int)o2);
             ip += Length;
         }
@@ -145,7 +144,7 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new Exception("HACK: Div -- Check for non-Integer values");
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Div -- Check for non-Integer values");
             valueStack.Push((int)o2 / (int)o1);
             ip += Length;
         }
@@ -160,7 +159,7 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new Exception("HACK: Idiv -- Check for non-Integer values");
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Idiv -- Check for non-Integer values");
             valueStack.Push((int)o2 / (int)o1);
             ip += Length;
         }
@@ -175,7 +174,7 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new Exception("HACK: Imod -- Check for non-Integer values");
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Imod -- Check for non-Integer values");
             valueStack.Push((int)o2 % (int)o1);
             ip += Length;
         }
@@ -205,7 +204,7 @@ namespace org.lb.lbvm
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             if (callStack.Peek().NumberOfParameters != NumberOfParameters)
-                throw new Exception("Error in program: Function called with wrong number of arguments");
+                throw new RuntimeException(Symbol + ": Expected " + NumberOfParameters + " argument(s), got " + callStack.Peek().NumberOfParameters);
             envStack.Push(new Environment());
             ip += Length;
         }
@@ -248,7 +247,7 @@ namespace org.lb.lbvm
                 ip = c.Target;
                 return;
             }
-            throw new Exception("Invalid CALL target");
+            throw new RuntimeException("Invalid CALL target");
         }
     }
 
@@ -280,7 +279,7 @@ namespace org.lb.lbvm
                 ip = c.Target;
                 return;
             }
-            throw new Exception("Invalid CALL target");
+            throw new RuntimeException("Invalid CALL target");
         }
     }
 
@@ -319,7 +318,7 @@ namespace org.lb.lbvm
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             object o = valueStack.Pop();
-            envStack.Peek().Get(SymbolNumber).SetValue(o);
+            envStack.Peek().Get(SymbolNumber, Symbol).SetValue(o);
             ip += Length;
         }
     }
@@ -361,7 +360,10 @@ namespace org.lb.lbvm
             List<Variable> values = new List<Variable>();
 
             for (int i = 0; i < NumberOfPushedArguments; ++i)
-                values.Add(envStack.Peek().Get(((Symbol)valueStack.Pop()).Number));
+            {
+                Symbol symbol = (Symbol)valueStack.Pop();
+                values.Add(envStack.Peek().Get(symbol.Number, symbol.Name));
+            }
             valueStack.Push(new Closure((IP)valueStack.Pop(), values));
             ip += Length;
         }
@@ -374,7 +376,7 @@ namespace org.lb.lbvm
         protected override string Disassembled { get { return "ERROR"; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
-            throw new Exception("Error in program: Jump into the middle of a statement");
+            throw new RuntimeException("Error in program: Jump into the middle of a statement");
         }
     }
 }

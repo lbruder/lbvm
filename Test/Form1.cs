@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 
@@ -21,7 +22,7 @@ namespace Test
                                         "        acc                       " +
                                         "        (ifac (* acc i) (- i 1))))" +
                                         "  (ifac 1 n))                     " +
-                                        "(fac 10)                          ";
+                                        "(fac 5)                           ";
 
             try
             {
@@ -30,8 +31,8 @@ namespace Test
                 WriteFile(program);
 
                 var program2 = ReadFile();
-                Disassemble(program2);
-                Run(program2);
+                Disassemble(program);
+                Run(program);
             }
             catch (Exception ex)
             {
@@ -66,7 +67,7 @@ namespace Test
 
         private static void Run(org.lb.lbvm.Program program)
         {
-            var sw1 = new System.Diagnostics.Stopwatch();
+            var sw1 = new Stopwatch();
             sw1.Start();
             object o = program.Run();
             sw1.Stop();
