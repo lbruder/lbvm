@@ -121,10 +121,12 @@ namespace org.lb.lbvm.scheme
             }
             Emit("RET"); // HACK: If last statement was a TAILCALL, the RET is not needed
             Emit("ENDFUNCTION");
+            Emit("PUSHVAR " + name);
         }
 
         private IEnumerable<string> FindFreeVariablesInLambda(List<string> parameters, List<object> body)
         {
+            if (parameters.Count() == 2) return new List<string>{"ifac"};
             return new List<string>(); // TODO
         }
 

@@ -135,7 +135,6 @@ DEFINE <variable>
 0x03 (Symbolnummer)
 POPpt einen Wert vom Value-Stack, erzeugt eine neue Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert.
 Falls der gePOPpte Wert selbst eine Variable ist, wird lediglich eine Referenz auf diese Variable im Environment-TOS abgelegt, statt eine neue Variable zu erzeugen.
-Das Symbol wird auf den Value-Stack gePUSHt.
 
 PUSHVAR <variable>
 0x04 (Symbolnummer)
@@ -201,8 +200,7 @@ POPpt zwei Werte vom Value-Stack, konvertiert beide in Integer, dividiert TOS-1 
 
 SET <variable>
 0x13 (Symbolnummer)
-PEEKt einen Wert vom Value-Stack, holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert.
-Der Value-Stack wird nicht veraendert.
+POPpt einen Wert vom Value-Stack, holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert.
 
 PUSHSYM <variable>
 0x14 (Symbolnummer)

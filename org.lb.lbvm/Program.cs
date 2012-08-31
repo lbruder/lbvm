@@ -26,7 +26,7 @@ namespace org.lb.lbvm
             return new ProgramFileReader(data).ProgramFile;
         }
 
-        public void ToStream(Stream data)
+        public void WriteToStream(Stream data)
         {
             new ProgramFileWriter(this).Write(data);
         }

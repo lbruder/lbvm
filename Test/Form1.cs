@@ -15,13 +15,23 @@ namespace Test
 
         private void button1_Click(object sender, EventArgs e)
         {
+            const string schemeSource = "(define (fac n)                   " +
+                                        "  (define (ifac acc i)            " +
+                                        "    (if (= 0 i)                   " +
+                                        "        acc                       " +
+                                        "        (ifac (* acc i) (- i 1))))" +
+                                        "  (ifac 1 n))                     " +
+                                        "(fac 10)                          ";
+
             try
             {
-                CompileFromScheme();
-                //AssembleAndWriteFile();
-                //var program = ReadFile();
-                //Disassemble(program);
-                //Run(program);
+                var assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(schemeSource);
+                var program = org.lb.lbvm.Assembler.Assemble(assemblerSource);
+                WriteFile(program);
+
+                var program2 = ReadFile();
+                Disassemble(program2);
+                Run(program2);
             }
             catch (Exception ex)
             {
@@ -29,33 +39,11 @@ namespace Test
             }
         }
 
-        private org.lb.lbvm.Program CompileFromScheme()
+        private static void WriteFile(org.lb.lbvm.Program program)
         {
-            const string schemeSource = "(define (fac n)                   " +
-                                        "  (define (ifac acc i)            " +
-                                        "    (if (= 0 i)                   " +
-                                        "        acc                       " +
-                                        "        (ifac (* acc i) (- i 1))))" +
-                                        "  (ifac 1 n))                     " +
-                                        "(fac 5)                           ";
-
-            textBox1.Text = string.Join("\r\n", org.lb.lbvm.scheme.Compiler.Compile(schemeSource));
-            return null;
+            using (var stream = File.Create("test.lbvm"))
+                program.WriteToStream(stream);
         }
-
-        //private static void AssembleAndWriteFile()
-        //{
-        //    string[] testSource = {
-        //        "FUNCTION fac n",
-        //        "FUNCTION ifac acc i &closingover ifac","PUSHINT 0","PUSHVAR i","NUMEQUAL","BFALSE label0","PUSHVAR acc","RET",
-        //        "label0:","PUSHVAR ifac","PUSHVAR acc","PUSHVAR i","MUL","PUSHVAR i","PUSHINT 1","SUB","TAILCALL 2","ENDFUNCTION",
-        //        "PUSHVAR ifac","PUSHINT 1","PUSHVAR n","TAILCALL 2","ENDFUNCTION",
-        //        "PUSHVAR fac","PUSHINT 5","CALL 1","END"
-        //    };
-
-        //    using (var stream = File.Create("test.lbvm"))
-        //        org.lb.lbvm.Assembler.Assemble(testSource).ToStream(stream);
-        //}
 
         private static org.lb.lbvm.Program ReadFile()
         {
