@@ -109,6 +109,7 @@ namespace org.lb.lbvm
             Mode mode = Mode.Parameter;
             for (int i = 2; i < line.Length; ++i)
             {
+                if (line[i] == "") continue;
                 if (line[i].ToLower() == "&closingover") mode = Mode.ClosingOverVariable;
                 else if (mode == Mode.Parameter) parameters.Add(line[i]);
                 else if (mode == Mode.ClosingOverVariable) closingOverVariables.Add(line[i]);

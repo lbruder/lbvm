@@ -78,7 +78,8 @@ namespace org.lb.lbvm.scheme
             int i;
             if (value == "#t") return true;
             if (value == "#f") return false;
-            if (int.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out i)) return i;
+            bool hasDecimal = value.Contains(".");
+            if (!hasDecimal && int.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out i)) return i;
             if (double.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out d)) return d;
             return new Symbol(value);
         }

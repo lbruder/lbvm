@@ -27,7 +27,7 @@ namespace Test
             try
             {
                 var assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text);
-                textBox1.Text = string.Join("\r\n", assemblerSource);
+                textBox1.Text = string.Join("\r\n", assemblerSource).Replace("ENDFUNCTION", "ENDFUNCTION\r\n");
                 var program = org.lb.lbvm.Assembler.Assemble(assemblerSource);
                 Disassemble(program);
                 Run(program);
@@ -69,7 +69,7 @@ namespace Test
             sw1.Start();
             object o = program.Run();
             sw1.Stop();
-            textBox1.Text += "\r\n" + o + "\r\n" + sw1.Elapsed;
+            textBox1.Text += "\r\n" + o + "\r\n" + o.GetType() + "\r\n" + sw1.Elapsed;
             textBox1.Select(textBox1.Text.Length - 1, 0);
             textBox1.ScrollToCaret();
         }

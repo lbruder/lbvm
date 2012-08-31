@@ -366,6 +366,7 @@ namespace org.lb.lbvm
                 Symbol symbol = (Symbol)valueStack.Pop();
                 values.Add(envStack.Peek().Get(symbol.Number, symbol.Name));
             }
+            values.Reverse();
             valueStack.Push(new Closure((IP)valueStack.Pop(), values));
             ip += Length;
         }
