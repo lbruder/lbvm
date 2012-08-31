@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace org.lb.lbvm.scheme
@@ -12,6 +13,8 @@ namespace org.lb.lbvm.scheme
         }
     }
 
+    // TODO: lambda, quote, begin
+
     public sealed class Compiler
     {
         private readonly List<string> CompiledSource = new List<string>();
@@ -22,6 +25,8 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol minusSymbol = new Symbol("-");
         private readonly Symbol starSymbol = new Symbol("*");
         private readonly Symbol slashSymbol = new Symbol("/");
+        private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin" };
+        private readonly List<Symbol> optimizedSymbols;
 
         public static string[] Compile(string source)
         {
@@ -30,6 +35,7 @@ namespace org.lb.lbvm.scheme
 
         private Compiler(string source)
         {
+            optimizedSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol };
             var readSource = new Reader().ReadAll(source).ToList();
 
             for (int i = 0; i < readSource.Count; ++i)
@@ -38,17 +44,17 @@ namespace org.lb.lbvm.scheme
                 CompileStatement(readSource[i], false);
                 if (!isLastStatement) Emit("POP");
             }
-            
+
             Emit("END");
         }
 
         private void CompileStatement(object o, bool tailCall)
         {
-            if (o is bool) CompileBoolConstant((bool)o);
-            else if (o is int) CompileIntegerConstant((int)o);
-            else if (o is double) CompileDoubleConstant((double)o);
-            else if (o is string) CompileStringConstant((string)o);
-            else if (o is Symbol) CompileSymbol((Symbol)o);
+            if (o is bool) Emit((bool)o ? "PUSHTRUE" : "PUSHFALSE");
+            else if (o is int) Emit("PUSHINT " + (int)o);
+            else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
+            else if (o is string) Emit("PUSHSTR \"" + EscapeString((string)o) + "\"");
+            else if (o is Symbol) Emit("PUSHVAR " + ((Symbol)o).Name);
             else if (o is List<object>) CompileList((List<object>)o, tailCall);
             else throw new CompilerException("Internal error: I don't know how to compile object of type " + o.GetType());
         }
@@ -59,34 +65,19 @@ namespace org.lb.lbvm.scheme
             System.Diagnostics.Debug.Print("EMIT   " + line);
         }
 
-        private void CompileBoolConstant(bool value)
+        private static string EscapeString(string value)
         {
-            Emit(value ? "PUSHTRUE" : "PUSHFALSE");
-        }
-
-        private void CompileIntegerConstant(int value)
-        {
-            Emit("PUSHINT " + value);
-        }
-
-        private void CompileDoubleConstant(double value)
-        {
-            throw new CompilerException("Compiling DOUBLEs not implemented yet");
-        }
-
-        private void CompileStringConstant(string value)
-        {
-            throw new CompilerException("Compiling STRINGs not implemented yet");
-        }
-
-        private void CompileSymbol(Symbol value)
-        {
-            Emit("PUSHVAR " + value.Name);
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\n", "\\n")
+                .Replace("\r", "\\r")
+                .Replace("\t", "\\t");
         }
 
         private void CompileList(List<object> value, bool tailCall)
         {
-            if (value.Count > 2 && defineSymbol.Equals(value[0])) CompileDefine(value);
+            if (value.Count > 1 && defineSymbol.Equals(value[0])) CompileDefine(value);
             else if (value.Count == 4 && ifSymbol.Equals(value[0])) CompileIf(value, tailCall);
             else if (value.Count == 3 && numericEqualSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMEQUAL");
             else if (value.Count == 3 && plusSymbol.Equals(value[0])) CompileNumericOperation(value, "ADD");
@@ -104,7 +95,7 @@ namespace org.lb.lbvm.scheme
 
         private void CompileFunctionDefinition(IEnumerable<object> value, List<object> functionNameAndParameters, List<object> body)
         {
-            if (!functionNameAndParameters.All(i => i is Symbol)) throw new CompilerException("Syntax error in function definition: Not all parameter names are symbols");
+            AssertAllFunctionParametersAreSymbols(functionNameAndParameters);
 
             string name = ((Symbol)functionNameAndParameters[0]).Name;
             List<string> parameters = functionNameAndParameters.Skip(1).Select(i => ((Symbol)i).Name).ToList();
@@ -124,11 +115,52 @@ namespace org.lb.lbvm.scheme
             Emit("PUSHVAR " + name);
         }
 
-        private IEnumerable<string> FindFreeVariablesInLambda(List<string> parameters, List<object> body)
+        private static void AssertAllFunctionParametersAreSymbols(IEnumerable<object> parameters)
         {
-            // TODO!!!
-            if (parameters.Count() == 2) return new List<string>{"ifac"};
-            return new List<string>();
+            if (!parameters.All(i => i is Symbol))
+                throw new CompilerException("Syntax error in function definition: Not all parameter names are symbols");
+        }
+
+        private IEnumerable<string> FindFreeVariablesInLambda(IEnumerable<string> parameters, IEnumerable<object> body)
+        {
+            HashSet<string> accessedVariables = new HashSet<string>();
+            HashSet<string> definedVariables = new HashSet<string>();
+            foreach (object o in body) FindAccessedVariables(o, accessedVariables, definedVariables);
+            foreach (string p in parameters) accessedVariables.Remove(p);
+            return accessedVariables;
+        }
+
+        private void FindAccessedVariables(object o, HashSet<string> accessedVariables, HashSet<string> definedVariables)
+        {
+            if (o is List<object>)
+            {
+                var list = (List<object>)o;
+                if (list.Count > 1 && defineSymbol.Equals(list[0]) && list[1] is List<object>) // define function
+                {
+                    string name = ((Symbol)((List<object>)list[1])[0]).Name;
+                    definedVariables.Add(name);
+                    var parameters = ((List<object>)list[1]).Skip(1).ToList();
+                    AssertAllFunctionParametersAreSymbols(parameters);
+                    foreach (var i in FindFreeVariablesInLambda(parameters.Select(i => ((Symbol)i).Name), list.Skip(2)))
+                        if (!definedVariables.Contains(i)) accessedVariables.Add(i);
+                }
+                else // Function call TODO: Lambda
+                {
+                    // Special handling for first parameter: +, -, *, /, =...
+                    bool first = true;
+                    foreach (object i in list)
+                    {
+                        if (first && optimizedSymbols.Contains(i)) first = false;
+                        else FindAccessedVariables(i, accessedVariables, definedVariables);
+                    }
+                }
+            }
+            else if (o is Symbol)
+            {
+                string symbol = ((Symbol)o).Name;
+                if (!specialFormSymbols.Contains(symbol) && !definedVariables.Contains(symbol))
+                    accessedVariables.Add(symbol);
+            }
         }
 
         private void CompileVariableDefinition(List<object> value)
