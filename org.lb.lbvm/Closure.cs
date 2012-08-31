@@ -7,9 +7,9 @@ namespace org.lb.lbvm
         public readonly int Target;
         public readonly List<Variable> ClosedOverValues;
 
-        public Closure(int target, List<Variable> closedOverValues)
+        public Closure(IP target, List<Variable> closedOverValues)
         {
-            this.Target = target;
+            this.Target = target.Value;
             this.ClosedOverValues = closedOverValues;
         }
     }

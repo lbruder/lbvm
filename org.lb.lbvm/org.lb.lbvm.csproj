@@ -45,6 +45,7 @@
     <Compile Include="Call.cs" />
     <Compile Include="Closure.cs" />
     <Compile Include="Environment.cs" />
+    <Compile Include="IP.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProgramFileReader.cs" />
     <Compile Include="ProgramFileWriter.cs" />

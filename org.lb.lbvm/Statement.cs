@@ -234,10 +234,10 @@ namespace org.lb.lbvm
             // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
             var vs = valueStack.ToArray();
             object target = vs[NumberOfPushedArguments];
-            if (target is int)
+            if (target is IP)
             {
                 callStack.Push(new Call(ip + Length, NumberOfPushedArguments));
-                ip = (int)vs[NumberOfPushedArguments];
+                ip = ((IP)target).Value;
                 return;
             }
             if (target is Closure)
@@ -266,10 +266,10 @@ namespace org.lb.lbvm
             // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
             var vs = valueStack.ToArray();
             object target = vs[NumberOfPushedArguments];
-            if (target is int)
+            if (target is IP)
             {
                 callStack.Push(new Call(oldIp, NumberOfPushedArguments));
-                ip = (int)vs[NumberOfPushedArguments];
+                ip = ((IP)target).Value;
                 return;
             }
             if (target is Closure)
@@ -304,7 +304,7 @@ namespace org.lb.lbvm
         protected override string Disassembled { get { return "PUSHLABEL 0x" + Number.ToString("x4"); } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
-            valueStack.Push(Number);
+            valueStack.Push(new IP(Number));
             ip += Length;
         }
     }
@@ -362,7 +362,7 @@ namespace org.lb.lbvm
 
             for (int i = 0; i < NumberOfPushedArguments; ++i)
                 values.Add(envStack.Peek().Get(((Symbol)valueStack.Pop()).Number));
-            valueStack.Push(new Closure((int)valueStack.Pop(), values));
+            valueStack.Push(new Closure((IP)valueStack.Pop(), values));
             ip += Length;
         }
     }
