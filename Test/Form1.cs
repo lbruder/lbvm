@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 
@@ -69,7 +70,7 @@ namespace Test
             sw1.Start();
             object o = program.Run();
             sw1.Stop();
-            textBox1.Text += "\r\n" + o + "\r\n" + o.GetType() + "\r\n" + sw1.Elapsed;
+            textBox1.Text += string.Format(CultureInfo.InvariantCulture, "\r\n{0}\r\n{1}\r\n{2}\r\n", o, o.GetType(), sw1.Elapsed);
             textBox1.Select(textBox1.Text.Length - 1, 0);
             textBox1.ScrollToCaret();
         }

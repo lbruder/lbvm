@@ -14,6 +14,7 @@ namespace org.lb.lbvm.scheme
     }
 
     // TODO: lambda, quote, begin
+    // TODO: cond, or, and / macro system
 
     public sealed class Compiler
     {
