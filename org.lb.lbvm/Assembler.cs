@@ -78,7 +78,8 @@ namespace org.lb.lbvm
         private enum Mode
         {
             Parameter,
-            ClosingOverVariable
+            ClosingOverVariable,
+            LocalDefines
         };
 
         private sealed class FunctionStatement
@@ -106,13 +107,16 @@ namespace org.lb.lbvm
             string labelEnd = generateLabel();
             List<string> parameters = new List<string>();
             List<string> closingOverVariables = new List<string>();
+            List<string> localDefines = new List<string>();
             Mode mode = Mode.Parameter;
             for (int i = 2; i < line.Length; ++i)
             {
                 if (line[i] == "") continue;
                 if (line[i].ToLower() == "&closingover") mode = Mode.ClosingOverVariable;
+                else if (line[i].ToLower() == "&localdefines") mode = Mode.LocalDefines;
                 else if (mode == Mode.Parameter) parameters.Add(line[i]);
                 else if (mode == Mode.ClosingOverVariable) closingOverVariables.Add(line[i]);
+                else if (mode == Mode.LocalDefines) localDefines.Add(line[i]);
                 else throw new AssemblerException("Internal error 1 in assembler");
             }
             functionStatements.Push(new FunctionStatement(name, labelStart, labelEnd, closingOverVariables));
@@ -120,6 +124,7 @@ namespace org.lb.lbvm
             ParseLine("JMP " + labelEnd);
             ParseLine(labelStart + ":");
             ParseLine("ENTER " + (parameters.Count + closingOverVariables.Count) + " " + name);
+            foreach (string v in localDefines) ParseLine("MAKEVAR " + v);
             var closingReversed = new List<string>(closingOverVariables);
             closingReversed.Reverse();
             foreach (string v in closingReversed) ParseLine("DEFINE " + v);
@@ -193,6 +198,7 @@ namespace org.lb.lbvm
                 case "NUMGT": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1a); break;
                 case "NUMGE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1b); break;
                 case "PUSHDBL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1c); EmitDouble(double.Parse(line[1], NumberStyles.Any, CultureInfo.InvariantCulture)); break;
+                case "MAKEVAR": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1d); EmitSymbol(line[1]); break;
                 case "ERROR": AssertParameterCount(parameterCount, 0, opcode); Emit(0xff); break;
                 default: throw new AssemblerException("Invalid opcode: " + opcode);
             }

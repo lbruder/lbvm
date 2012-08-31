@@ -86,6 +86,7 @@ namespace org.lb.lbvm
                 case 0x1a: statements.Add(new NumgtStatement()); return;
                 case 0x1b: statements.Add(new NumgeStatement()); return;
                 case 0x1c: statements.Add(new PushdblStatement(ReadDouble())); return;
+                case 0x1d: tmp = ReadInt(); statements.Add(new MakevarStatement(tmp, GetSymbolTableEntry(tmp))); return;
                 default: throw new InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
         }

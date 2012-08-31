@@ -17,20 +17,13 @@ namespace Test
 
         private void button1_Click(object sender, EventArgs e)
         {
-            const string schemeSource = "(define (fac n)                   " +
-                                        "  (define (ifac acc i)            " +
-                                        "    (if (= 0 i)                   " +
-                                        "        acc                       " +
-                                        "        (ifac (* acc i) (- i 1))))" +
-                                        "  (ifac 1 n))                     " +
-                                        "(fac 5)                           ";
-
             try
             {
+                textBox1.Text = "";
                 var assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text);
-                textBox1.Text = string.Join("\r\n", assemblerSource).Replace("ENDFUNCTION", "ENDFUNCTION\r\n");
+                //textBox1.Text = string.Join("\r\n", assemblerSource);
                 var program = org.lb.lbvm.Assembler.Assemble(assemblerSource);
-                Disassemble(program);
+                //Disassemble(program);
                 Run(program);
             }
             catch (Exception ex)
@@ -68,7 +61,9 @@ namespace Test
         {
             var sw1 = new Stopwatch();
             sw1.Start();
-            object o = program.Run();
+            object o;
+            try { o = program.Run(); }
+            catch (Exception ex) { o = ex.Message; }
             sw1.Stop();
             textBox1.Text += string.Format(CultureInfo.InvariantCulture, "\r\n{0}\r\n{1}\r\n{2}\r\n", o, o.GetType(), sw1.Elapsed);
             textBox1.Select(textBox1.Text.Length - 1, 0);

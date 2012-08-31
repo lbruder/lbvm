@@ -6,6 +6,11 @@ namespace org.lb.lbvm
     {
         private readonly Dictionary<int, Variable> values = new Dictionary<int, Variable>();
 
+        public bool HasVariable(int symbolNumber)
+        {
+            return values.ContainsKey(symbolNumber);
+        }
+
         public void Set(int symbolNumber, Variable value)
         {
             values[symbolNumber] = value;
@@ -13,7 +18,7 @@ namespace org.lb.lbvm
 
         public Variable Get(int symbolNumber, string symbolName)
         {
-            if (!values.ContainsKey(symbolNumber)) throw new RuntimeException("Unknown variable '" + symbolName + "'");
+            if (!HasVariable(symbolNumber)) throw new RuntimeException("Unknown variable '" + symbolName + "'");
             return values[symbolNumber];
         }
     }

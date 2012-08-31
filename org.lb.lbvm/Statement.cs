@@ -57,8 +57,15 @@ namespace org.lb.lbvm
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             object o = valueStack.Pop();
-            if (o is Variable) envStack.Peek().Set(SymbolNumber, (Variable)o); // Link to variable, e.g. in Closure
-            else envStack.Peek().Set(SymbolNumber, new Variable(o));
+            var env = envStack.Peek();
+            if (o is Variable) env.Set(SymbolNumber, (Variable)o); // Link to variable, e.g. in Closure
+            else
+            {
+                if (env.HasVariable(SymbolNumber) && env.Get(SymbolNumber, Symbol).IsUnassigned())
+                    env.Get(SymbolNumber, Symbol).SetValue(o);
+                else
+                    env.Set(SymbolNumber, new Variable(o));
+            }
             ip += Length;
         }
     }
@@ -441,6 +448,20 @@ namespace org.lb.lbvm
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(Number);
+            ip += Length;
+        }
+    }
+
+    public sealed class MakevarStatement : Statement
+    {
+        internal MakevarStatement(int symbolNumber, string symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
+        private readonly int SymbolNumber;
+        private readonly string Symbol;
+        public override int Length { get { return 5; } }
+        protected override string Disassembled { get { return "MAKEVAR " + Symbol; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            envStack.Peek().Set(SymbolNumber, new Variable());
             ip += Length;
         }
     }

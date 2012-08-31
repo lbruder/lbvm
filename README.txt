@@ -135,10 +135,12 @@ DEFINE <variable>
 0x03 (Symbolnummer)
 POPpt einen Wert vom Value-Stack, erzeugt eine neue Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert.
 Falls der gePOPpte Wert selbst eine Variable ist, wird lediglich eine Referenz auf diese Variable im Environment-TOS abgelegt, statt eine neue Variable zu erzeugen.
+War bereits eine Variable mit der angegebenen Symbolnummer vorhanden UND hat den Wert UNASSIGNED, so wird sie weiterverwendet.
 
 PUSHVAR <variable>
 0x04 (Symbolnummer)
-Holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS, liest ihren Wert aus und PUSHt ihn auf den Value-Stack
+Holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS, liest ihren Wert aus und PUSHt ihn auf den Value-Stack.
+Hat die Variable den Wert UNASSIGNED, so bricht das Programm mit einer Fehlermeldung ab.
 
 NUMEQUAL
 0x05
@@ -238,6 +240,10 @@ POPpt zwei Werte vom Value-Stack, und PUSHt true, wenn TOS-1 >= TOS, ansonsten f
 PUSHDBL
 0x1c (value as 8-byte-IEEE-float)
 PUSHt eine Double-Konstante auf den Value-Stack
+
+MAKEVAR <variable>
+0x1d (Symbolnummer)
+Erzeugt die Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt sie auf den Wert UNASSIGNED.
 
 ERROR
 0xff

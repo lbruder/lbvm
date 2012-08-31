@@ -35,7 +35,7 @@ namespace org.lb.lbvm.scheme
 
         public static string[] Compile(string source)
         {
-            return new Compiler(source).CompiledSource.ToArray();
+            return new Compiler("(define (##compiler__main##) " + source + ") (##compiler__main##)").CompiledSource.ToArray();
         }
 
         private Compiler(string source)
@@ -108,10 +108,13 @@ namespace org.lb.lbvm.scheme
 
             string name = ((Symbol)functionNameAndParameters[0]).Name;
             List<string> parameters = functionNameAndParameters.Skip(1).Select(i => ((Symbol)i).Name).ToList();
-            List<string> freeVariables = FindFreeVariablesInLambda(parameters, body).ToList();
-
+            HashSet<string> defines = new HashSet<string>();
+            List<string> freeVariables = FindFreeVariablesInLambda(parameters, body, defines).ToList();
+            foreach (string i in defines) freeVariables.Remove(i);
+            
             string functionLine = "FUNCTION " + name + " " + string.Join(" ", parameters);
             if (freeVariables.Count > 0) functionLine += " &closingover " + string.Join(" ", freeVariables);
+            if (defines.Count > 0) functionLine += " &localdefines " + string.Join(" ", defines);
             Emit(functionLine);
             for (int i = 0; i < body.Count; ++i)
             {
@@ -130,11 +133,11 @@ namespace org.lb.lbvm.scheme
                 throw new CompilerException("Syntax error in function definition: Not all parameter names are symbols");
         }
 
-        private IEnumerable<string> FindFreeVariablesInLambda(IEnumerable<string> parameters, IEnumerable<object> body)
+        // HACK: HashSet parameter is ugly
+        private IEnumerable<string> FindFreeVariablesInLambda(IEnumerable<string> parameters, IEnumerable<object> body, HashSet<string> localVariablesDefinedInLambda)
         {
             HashSet<string> accessedVariables = new HashSet<string>();
-            HashSet<string> definedVariables = new HashSet<string>();
-            foreach (object o in body) FindAccessedVariables(o, accessedVariables, definedVariables);
+            foreach (object o in body) FindAccessedVariables(o, accessedVariables, localVariablesDefinedInLambda);
             foreach (string p in parameters) accessedVariables.Remove(p);
             return accessedVariables;
         }
@@ -150,10 +153,10 @@ namespace org.lb.lbvm.scheme
                     definedVariables.Add(name);
                     var parameters = ((List<object>)list[1]).Skip(1).ToList();
                     AssertAllFunctionParametersAreSymbols(parameters);
-                    foreach (var i in FindFreeVariablesInLambda(parameters.Select(i => ((Symbol)i).Name), list.Skip(2)))
+                    foreach (var i in FindFreeVariablesInLambda(parameters.Select(i => ((Symbol)i).Name), list.Skip(2), new HashSet<string>()))
                         if (!definedVariables.Contains(i)) accessedVariables.Add(i);
                 }
-                else // Function call TODO: Lambda
+                else // Function call TODO: Lambdas, simple DEFINEs
                 {
                     // Special handling for first parameter: +, -, *, /, =...
                     bool first = true;
