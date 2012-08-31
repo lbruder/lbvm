@@ -30,8 +30,15 @@ namespace org.lb.lbvm.scheme
 
         private Compiler(string source)
         {
-            var readSource = new Reader().ReadAll(source);
-            foreach (object o in readSource) CompileStatement(o, false);
+            var readSource = new Reader().ReadAll(source).ToList();
+
+            for (int i = 0; i < readSource.Count; ++i)
+            {
+                bool isLastStatement = i == readSource.Count - 1;
+                CompileStatement(readSource[i], false);
+                if (!isLastStatement) Emit("POP");
+            }
+            
             Emit("END");
         }
 
@@ -106,8 +113,13 @@ namespace org.lb.lbvm.scheme
             string functionLine = "FUNCTION " + name + " " + string.Join(" ", parameters);
             if (freeVariables.Count > 0) functionLine += " &closingover " + string.Join(" ", freeVariables);
             Emit(functionLine);
-            for (int i=0; i<body.Count; ++i) CompileStatement(body[i], i==body.Count-1);
-            Emit("RET");
+            for (int i = 0; i < body.Count; ++i)
+            {
+                bool isLastStatement = i == body.Count - 1;
+                CompileStatement(body[i], isLastStatement);
+                if (!isLastStatement) Emit("POP");
+            }
+            Emit("RET"); // HACK: If last statement was a TAILCALL, the RET is not needed
             Emit("ENDFUNCTION");
         }
 

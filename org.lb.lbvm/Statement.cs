@@ -58,6 +58,7 @@ namespace org.lb.lbvm
             object o = valueStack.Pop();
             if (o is Variable) envStack.Peek().Set(SymbolNumber, (Variable)o); // Link to variable, e.g. in Closure
             else envStack.Peek().Set(SymbolNumber, new Variable(o));
+            valueStack.Push(new Symbol(SymbolNumber, Symbol));
             ip += Length;
         }
     }
@@ -318,7 +319,7 @@ namespace org.lb.lbvm
         protected override string Disassembled { get { return "SET " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
-            object o = valueStack.Pop();
+            object o = valueStack.Peek();
             envStack.Peek().Get(SymbolNumber).SetValue(o);
             ip += Length;
         }

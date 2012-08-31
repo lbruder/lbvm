@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Windows.Forms;
 
 // ReSharper disable LocalizableElement
@@ -44,19 +43,19 @@ namespace Test
             return null;
         }
 
-        private static void AssembleAndWriteFile()
-        {
-            string[] testSource = {
-                "FUNCTION fac n",
-                "FUNCTION ifac acc i &closingover ifac","PUSHINT 0","PUSHVAR i","NUMEQUAL","BFALSE label0","PUSHVAR acc","RET",
-                "label0:","PUSHVAR ifac","PUSHVAR acc","PUSHVAR i","MUL","PUSHVAR i","PUSHINT 1","SUB","TAILCALL 2","ENDFUNCTION",
-                "PUSHVAR ifac","PUSHINT 1","PUSHVAR n","TAILCALL 2","ENDFUNCTION",
-                "PUSHVAR fac","PUSHINT 5","CALL 1","END"
-            };
+        //private static void AssembleAndWriteFile()
+        //{
+        //    string[] testSource = {
+        //        "FUNCTION fac n",
+        //        "FUNCTION ifac acc i &closingover ifac","PUSHINT 0","PUSHVAR i","NUMEQUAL","BFALSE label0","PUSHVAR acc","RET",
+        //        "label0:","PUSHVAR ifac","PUSHVAR acc","PUSHVAR i","MUL","PUSHVAR i","PUSHINT 1","SUB","TAILCALL 2","ENDFUNCTION",
+        //        "PUSHVAR ifac","PUSHINT 1","PUSHVAR n","TAILCALL 2","ENDFUNCTION",
+        //        "PUSHVAR fac","PUSHINT 5","CALL 1","END"
+        //    };
 
-            using (var stream = File.Create("test.lbvm"))
-                org.lb.lbvm.Assembler.Assemble(testSource).ToStream(stream);
-        }
+        //    using (var stream = File.Create("test.lbvm"))
+        //        org.lb.lbvm.Assembler.Assemble(testSource).ToStream(stream);
+        //}
 
         private static org.lb.lbvm.Program ReadFile()
         {

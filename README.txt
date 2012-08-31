@@ -92,14 +92,14 @@ Pusht die Labels label0 und label1 auf einen "Funktions-Stack" im Assembler, exp
    JMP label0
  label1:
    ENTER (length parameters + length closing-variables) fac
-   DEFINE parameter0
-   DEFINE parameter1
-   ...
    DEFINE parameterN
-   DEFINE closing-variable0
-   DEFINE closing-variable1
    ...
+   DEFINE parameter1
+   DEFINE parameter0
    DEFINE closing-variableN
+   ...
+   DEFINE closing-variable1
+   DEFINE closing-variable0
    POP
 
 ENDFUNCTION
@@ -121,20 +121,21 @@ Falls zuvor eine Closure definiert wurde, wird zusaetzlich folgendes angehaengt:
 
 END
 0x00
-Programm wird beendet
+Programm wird beendet. Veraendert keinen Stack.
 
 POP
 0x01
-POPpt einen Wert vom Value-Stack und verwirft ihn
+POPpt einen Wert vom Value-Stack und verwirft ihn.
 
 PUSHINT <number>
 0x02 (number)
-PUSHt einen konstanten Integer-Wert auf den Value-Stack
+PUSHt einen konstanten Integer-Wert auf den Value-Stack.
 
 DEFINE <variable>
 0x03 (Symbolnummer)
 POPpt einen Wert vom Value-Stack, erzeugt eine neue Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert.
 Falls der gePOPpte Wert selbst eine Variable ist, wird lediglich eine Referenz auf diese Variable im Environment-TOS abgelegt, statt eine neue Variable zu erzeugen.
+Das Symbol wird auf den Value-Stack gePUSHt.
 
 PUSHVAR <variable>
 0x04 (Symbolnummer)
@@ -192,7 +193,7 @@ Springt direkt an die angegebene Adresse.
 
 PUSHLABEL <IP>
 0x11 (number)
-Wie PUSHINT, fuer Disassembler
+PUSHt den angegebenen IP auf den Value-Stack.
 
 IMOD
 0x12
@@ -200,11 +201,12 @@ POPpt zwei Werte vom Value-Stack, konvertiert beide in Integer, dividiert TOS-1 
 
 SET <variable>
 0x13 (Symbolnummer)
-POPpt einen Wert vom Value-Stack, holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert
+PEEKt einen Wert vom Value-Stack, holt sich die Adresse der Variablen mit der angegebenen Symbolnummer im Environment-TOS und setzt die Variable auf den gePOPpten Wert.
+Der Value-Stack wird nicht veraendert.
 
 PUSHSYM <variable>
 0x14 (Symbolnummer)
-PUSHt das Symbol mit der angegebenen Symbolnummer auf den Value-Stack
+PUSHt das angegebene Symbol auf den Value-Stack
 
 PUSHTRUE
 0x15
@@ -217,7 +219,7 @@ PUSHt den Wert FALSE auf den Value-Stack
 MAKECLOSURE <number-of-pushed-arguments>
 0x17 (Parameteranzahl)
 Holt sich <number-of-pushed-arguments> Symbole vom Value-Stack, POPpt dann die IP eines Lambdas und gibt eine neu erzeugte Closure zurueck,
-die wie ein Lambda aufgerufen wird, und dabei die an MAKECLOSURE uebergebenen Variablenwerte in der selben Reihenfolge PUSHT wie beim Aufruf von MAKECLOSURE.
+die wie ein Lambda aufgerufen wird, und dabei die an MAKECLOSURE uebergebenen VariablenREFERENZEN in der selben Reihenfolge PUSHT wie beim Aufruf von MAKECLOSURE.
 
 ERROR
 0xff
