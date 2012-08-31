@@ -81,8 +81,12 @@ namespace org.lb.lbvm
                 case 0x15: statements.Add(new PushboolStatement(true)); return;
                 case 0x16: statements.Add(new PushboolStatement(false)); return;
                 case 0x17: statements.Add(new MakeClosureStatement(ReadInt())); return;
-                default:
-                    throw new InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
+                case 0x18: statements.Add(new NumltStatement()); return;
+                case 0x19: statements.Add(new NumleStatement()); return;
+                case 0x1a: statements.Add(new NumgtStatement()); return;
+                case 0x1b: statements.Add(new NumgeStatement()); return;
+                case 0x1c: statements.Add(new PushdblStatement(ReadDouble())); return;
+                default: throw new InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
         }
 
@@ -97,6 +101,13 @@ namespace org.lb.lbvm
         {
             if (no >= 0 && no < symbolTable.Length) return symbolTable[no];
             throw new SymbolTableEntryNotFoundException("Symbol table entry not found");
+        }
+
+        private double ReadDouble()
+        {
+            double ret = BitConverter.ToDouble(bytecode, offset);
+            offset += 8;
+            return ret;
         }
     }
 }

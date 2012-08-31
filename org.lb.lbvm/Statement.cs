@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 
 // ReSharper disable RedundantAssignment
 
@@ -365,6 +366,79 @@ namespace org.lb.lbvm
                 values.Add(envStack.Peek().Get(symbol.Number, symbol.Name));
             }
             valueStack.Push(new Closure((IP)valueStack.Pop(), values));
+            ip += Length;
+        }
+    }
+
+    public sealed class NumltStatement : Statement
+    {
+        internal NumltStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "NUMLT"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o1 = valueStack.Pop();
+            object o2 = valueStack.Pop();
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numlt -- Check for non-Integer values");
+            valueStack.Push((int)o2 < (int)o1);
+            ip += Length;
+        }
+    }
+
+    public sealed class NumleStatement : Statement
+    {
+        internal NumleStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "NUMLE"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o1 = valueStack.Pop();
+            object o2 = valueStack.Pop();
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numle -- Check for non-Integer values");
+            valueStack.Push((int)o2 <= (int)o1);
+            ip += Length;
+        }
+    }
+
+    public sealed class NumgtStatement : Statement
+    {
+        internal NumgtStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "NUMGT"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o1 = valueStack.Pop();
+            object o2 = valueStack.Pop();
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numgt -- Check for non-Integer values");
+            valueStack.Push((int)o2 > (int)o1);
+            ip += Length;
+        }
+    }
+
+    public sealed class NumgeStatement : Statement
+    {
+        internal NumgeStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "NUMGE"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o1 = valueStack.Pop();
+            object o2 = valueStack.Pop();
+            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numge -- Check for non-Integer values");
+            valueStack.Push((int)o2 >= (int)o1);
+            ip += Length;
+        }
+    }
+
+    public sealed class PushdblStatement : Statement
+    {
+        internal PushdblStatement(double number) { this.Number = number; }
+        private readonly double Number;
+        public override int Length { get { return 9; } }
+        protected override string Disassembled { get { return "PUSHDBL " + Number.ToString(CultureInfo.InvariantCulture); } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            valueStack.Push(Number);
             ip += Length;
         }
     }

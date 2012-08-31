@@ -26,9 +26,9 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol starSymbol = new Symbol("*");
         private readonly Symbol slashSymbol = new Symbol("/");
         private readonly Symbol ltSymbol = new Symbol("<");
-        private readonly Symbol gtSymbol = new Symbol("<");
+        private readonly Symbol gtSymbol = new Symbol(">");
         private readonly Symbol leSymbol = new Symbol("<=");
-        private readonly Symbol geSymbol = new Symbol("<=");
+        private readonly Symbol geSymbol = new Symbol(">=");
         private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin" };
         private readonly List<Symbol> optimizedSymbols;
 

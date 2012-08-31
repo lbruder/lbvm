@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace org.lb.lbvm
 {
@@ -186,6 +187,11 @@ namespace org.lb.lbvm
                 case "PUSHTRUE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x15); break;
                 case "PUSHFALSE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x16); break;
                 case "MAKECLOSURE": AssertParameterCount(parameterCount, 1, opcode); Emit(0x17); EmitInt(int.Parse(line[1])); break;
+                case "NUMLT": AssertParameterCount(parameterCount, 0, opcode); Emit(0x18); break;
+                case "NUMLE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x19); break;
+                case "NUMGT": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1a); break;
+                case "NUMGE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1b); break;
+                case "PUSHDBL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1c); EmitDouble(double.Parse(line[1], NumberStyles.Any, CultureInfo.InvariantCulture)); break;
                 case "ERROR": AssertParameterCount(parameterCount, 0, opcode); Emit(0xff); break;
                 default: throw new AssemblerException("Invalid opcode: " + opcode);
             }
@@ -216,6 +222,11 @@ namespace org.lb.lbvm
         {
             WantedLabels.Add(new WantedLabel(label, Bytecode.Count));
             EmitInt(0);
+        }
+
+        private void EmitDouble(double valueAsDouble)
+        {
+            foreach (byte b in BitConverter.GetBytes(valueAsDouble)) Emit(b);
         }
 
         private void SetLabelPositions()

@@ -219,6 +219,26 @@ MAKECLOSURE <number-of-pushed-arguments>
 Holt sich <number-of-pushed-arguments> Symbole vom Value-Stack, POPpt dann die IP eines Lambdas und gibt eine neu erzeugte Closure zurueck,
 die wie ein Lambda aufgerufen wird, und dabei die an MAKECLOSURE uebergebenen VariablenREFERENZEN in der selben Reihenfolge PUSHT wie beim Aufruf von MAKECLOSURE.
 
+NUMLT
+0x18
+POPpt zwei Werte vom Value-Stack, und PUSHt true, wenn TOS-1 < TOS, ansonsten false
+
+NUMLE
+0x19
+POPpt zwei Werte vom Value-Stack, und PUSHt true, wenn TOS-1 <= TOS, ansonsten false
+
+NUMGT
+0x1a
+POPpt zwei Werte vom Value-Stack, und PUSHt true, wenn TOS-1 > TOS, ansonsten false
+
+NUMGE
+0x1b
+POPpt zwei Werte vom Value-Stack, und PUSHt true, wenn TOS-1 >= TOS, ansonsten false
+
+PUSHDBL
+0x1c (value as 8-byte-IEEE-float)
+PUSHt eine Double-Konstante auf den Value-Stack
+
 ERROR
 0xff
 Programmfehler
