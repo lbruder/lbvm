@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -85,8 +86,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numeq -- Check for non-Integer values");
-            valueStack.Push((int)o1 == (int)o2);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o1 == (int)o2);
+            else valueStack.Push(Convert.ToDouble(o1) == Convert.ToDouble(o2));
             ip += Length;
         }
     }
@@ -100,8 +101,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Add -- Check for non-Integer values");
-            valueStack.Push((int)o1 + (int)o2);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o1 + (int)o2);
+            else valueStack.Push(Convert.ToDouble(o1) + Convert.ToDouble(o2));
             ip += Length;
         }
     }
@@ -115,8 +116,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Sub -- Check for non-Integer values");
-            valueStack.Push((int)o2 - (int)o1);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 - (int)o1);
+            else valueStack.Push(Convert.ToDouble(o2) - Convert.ToDouble(o1));
             ip += Length;
         }
     }
@@ -130,8 +131,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Mul -- Check for non-Integer values");
-            valueStack.Push((int)o1 * (int)o2);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o1 * (int)o2);
+            else valueStack.Push(Convert.ToDouble(o1) * Convert.ToDouble(o2));
             ip += Length;
         }
     }
@@ -145,8 +146,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Div -- Check for non-Integer values");
-            valueStack.Push((int)o2 / (int)o1);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 / (int)o1);
+            else valueStack.Push(Convert.ToDouble(o2) / Convert.ToDouble(o1));
             ip += Length;
         }
     }
@@ -160,8 +161,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Idiv -- Check for non-Integer values");
-            valueStack.Push((int)o2 / (int)o1);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 / (int)o1);
+            else valueStack.Push((int)Convert.ToDouble(o2) / (int)Convert.ToDouble(o1));
             ip += Length;
         }
     }
@@ -175,8 +176,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Imod -- Check for non-Integer values");
-            valueStack.Push((int)o2 % (int)o1);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 % (int)o1);
+            else valueStack.Push((int)Convert.ToDouble(o2) % (int)Convert.ToDouble(o1));
             ip += Length;
         }
     }
@@ -379,8 +380,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numlt -- Check for non-Integer values");
-            valueStack.Push((int)o2 < (int)o1);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 < (int)o1);
+            else valueStack.Push(Convert.ToDouble(o2) < Convert.ToDouble(o1));
             ip += Length;
         }
     }
@@ -394,8 +395,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numle -- Check for non-Integer values");
-            valueStack.Push((int)o2 <= (int)o1);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 <= (int)o1);
+            else valueStack.Push(Convert.ToDouble(o2) <= Convert.ToDouble(o1));
             ip += Length;
         }
     }
@@ -409,8 +410,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numgt -- Check for non-Integer values");
-            valueStack.Push((int)o2 > (int)o1);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 > (int)o1);
+            else valueStack.Push(Convert.ToDouble(o2) > Convert.ToDouble(o1));
             ip += Length;
         }
     }
@@ -424,8 +425,8 @@ namespace org.lb.lbvm
         {
             object o1 = valueStack.Pop();
             object o2 = valueStack.Pop();
-            if (!(o1 is int) || !(o2 is int)) throw new RuntimeException("HACK: Numge -- Check for non-Integer values");
-            valueStack.Push((int)o2 >= (int)o1);
+            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 >= (int)o1);
+            else valueStack.Push(Convert.ToDouble(o2) >= Convert.ToDouble(o1));
             ip += Length;
         }
     }
