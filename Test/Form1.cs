@@ -26,11 +26,9 @@ namespace Test
 
             try
             {
-                var assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(schemeSource);
+                var assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text);
+                textBox1.Text = string.Join("\r\n", assemblerSource);
                 var program = org.lb.lbvm.Assembler.Assemble(assemblerSource);
-                WriteFile(program);
-
-                var program2 = ReadFile();
                 Disassemble(program);
                 Run(program);
             }
@@ -65,13 +63,21 @@ namespace Test
             textBox1.Text = t;
         }
 
-        private static void Run(org.lb.lbvm.Program program)
+        private void Run(org.lb.lbvm.Program program)
         {
             var sw1 = new Stopwatch();
             sw1.Start();
             object o = program.Run();
             sw1.Stop();
-            MessageBox.Show(sw1.Elapsed + "  --  " + o);
+            textBox1.Text += "\r\n" + o + "\r\n" + sw1.Elapsed;
+            textBox1.Select(textBox1.Text.Length - 1, 0);
+            textBox1.ScrollToCaret();
+        }
+
+        private void textBox2_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F5)
+                button1.PerformClick();
         }
     }
 }

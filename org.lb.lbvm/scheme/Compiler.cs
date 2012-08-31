@@ -25,6 +25,10 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol minusSymbol = new Symbol("-");
         private readonly Symbol starSymbol = new Symbol("*");
         private readonly Symbol slashSymbol = new Symbol("/");
+        private readonly Symbol ltSymbol = new Symbol("<");
+        private readonly Symbol gtSymbol = new Symbol("<");
+        private readonly Symbol leSymbol = new Symbol("<=");
+        private readonly Symbol geSymbol = new Symbol("<=");
         private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin" };
         private readonly List<Symbol> optimizedSymbols;
 
@@ -35,7 +39,7 @@ namespace org.lb.lbvm.scheme
 
         private Compiler(string source)
         {
-            optimizedSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol };
+            optimizedSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, leSymbol, ltSymbol, geSymbol, gtSymbol };
             var readSource = new Reader().ReadAll(source).ToList();
 
             for (int i = 0; i < readSource.Count; ++i)
@@ -84,6 +88,10 @@ namespace org.lb.lbvm.scheme
             else if (value.Count == 3 && minusSymbol.Equals(value[0])) CompileNumericOperation(value, "SUB");
             else if (value.Count == 3 && starSymbol.Equals(value[0])) CompileNumericOperation(value, "MUL");
             else if (value.Count == 3 && slashSymbol.Equals(value[0])) CompileNumericOperation(value, "DIV");
+            else if (value.Count == 3 && ltSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMLT");
+            else if (value.Count == 3 && leSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMLE");
+            else if (value.Count == 3 && gtSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMGT");
+            else if (value.Count == 3 && geSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMGE");
             else CompileFunctionCall(value, tailCall);
         }
 
