@@ -1,4 +1,4 @@
-namespace org.lb.lbvm
+namespace org.lb.lbvm.runtime
 {
     internal sealed class Variable
     {

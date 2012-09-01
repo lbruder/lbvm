@@ -5,14 +5,6 @@ using System.Linq;
 
 namespace org.lb.lbvm.scheme
 {
-    public sealed class CompilerException : Exception
-    {
-        public CompilerException(string message)
-            : base(message)
-        {
-        }
-    }
-
     // TODO: lambda, quote, begin
     // TODO: or, and / macro system
 

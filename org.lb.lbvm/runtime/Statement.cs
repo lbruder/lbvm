@@ -4,7 +4,7 @@ using System.Globalization;
 
 // ReSharper disable RedundantAssignment
 
-namespace org.lb.lbvm
+namespace org.lb.lbvm.runtime
 {
     public abstract class Statement
     {

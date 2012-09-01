@@ -4,14 +4,6 @@ using System.Globalization;
 
 namespace org.lb.lbvm
 {
-    public sealed class AssemblerException : Exception
-    {
-        public AssemblerException(string message)
-            : base(message)
-        {
-        }
-    }
-
     public sealed class Assembler
     {
         private sealed class WantedLabel

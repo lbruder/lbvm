@@ -8,7 +8,7 @@ namespace org.lb.lbvm
     public sealed class Program
     {
         public readonly int Version;
-        public readonly Statement[] Statements;
+        public readonly runtime.Statement[] Statements;
         public readonly byte[] Bytecode;
         public readonly string[] SymbolTable;
 
@@ -18,7 +18,6 @@ namespace org.lb.lbvm
             Statements = BytecodeParser.Parse(bytecode, symbolTable);
             Bytecode = bytecode;
             SymbolTable = symbolTable;
-            // TODO: Sprungziele ueberpruefen
         }
 
         public static Program FromStream(Stream data)
@@ -35,12 +34,12 @@ namespace org.lb.lbvm
         {
             int ip = 0;
             var valueStack = new Stack<object>();
-            var envStack = new Stack<Environment>();
-            var callStack = new Stack<Call>();
+            var envStack = new Stack<runtime.Environment>();
+            var callStack = new Stack<runtime.Call>();
 
-            envStack.Push(new Environment()); // Global env
+            envStack.Push(new runtime.Environment()); // Global env
 
-            for (var current = Statements[ip]; !(current is EndStatement); current = Statements[ip])
+            for (var current = Statements[ip]; !(current is runtime.EndStatement); current = Statements[ip])
             {
                 Debug.Print("0x" + ip.ToString("x4") + ": " + current);
                 current.Execute(ref ip, valueStack, envStack, callStack);

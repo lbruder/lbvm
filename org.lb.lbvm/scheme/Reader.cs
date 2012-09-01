@@ -5,14 +5,6 @@ using System.Text;
 
 namespace org.lb.lbvm.scheme
 {
-    public sealed class ReaderException : Exception
-    {
-        public ReaderException(string message)
-            : base(message)
-        {
-        }
-    }
-
     public sealed class Reader
     {
         private StringReader expressionReader;

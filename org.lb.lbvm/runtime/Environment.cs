@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace org.lb.lbvm
+namespace org.lb.lbvm.runtime
 {
     internal sealed class Environment
     {
