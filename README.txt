@@ -1,97 +1,51 @@
-(defun fac (n)
-  (defun ifac (acc i)
-    (if (= 0 i)
-        acc
-        (ifac (* acc i) (- i 1))))
-  (ifac 1 n))
-(fac 5)
-
---------------------------------------------------------------------------------
-
-FUNCTION fac n
-
-  FUNCTION ifac acc i &closingover ifac
-
-    PUSHINT 0
-    PUSHVAR i
-    NUMEQUAL
-    BFALSE label0
-    PUSHVAR acc
-    RET
-
-  label0:
-    PUSHVAR ifac
-    PUSHVAR acc
-    PUSHVAR i
-    MUL
-    PUSHVAR i
-    PUSHINT 1
-    SUB
-    TAILCALL 2
-
-  ENDFUNCTION
-
-  PUSHVAR ifac
-  PUSHINT 1
-  PUSHVAR n
-  TAILCALL 2
-
-ENDFUNCTION
-
-PUSHVAR fac
-PUSHINT 5
-CALL 1
-END
-
---------------------------------------------------------------------------------
-
-Dateiformat (binaer):
+File format (binary):
 <Header><Block0><Block1><Block2>...<Footer>
 
 Header:
-- 4 Bytes, ASCII "LBVM"
-- 1 Byte Versionsnummer
-- 3 Bytes reserviert
+- 4 Bytes ASCII "LBVM"
+- 1 Byte version number
+- 3 Bytes reserved
 
 Block:
-- 1 Byte Blocktyp
-- 4 Bytes Datenlaenge
-- n Bytes Daten
+- 1 Byte block type
+- 4 Bytes data length
+- n Bytes data
 
-Blocktypen:
-- 00 Reserviert (spaeter Programminfo)
+Block types:
+- 00 Reserved (e.g. for program info)
 - 01 Code
-- 02 Symboltabelle
+- 02 Symbol table
 - ff Footer
 
-Datenbereich:
-- Code: Bytecode, Offset im Datenbereich = IP
-- Symboltabelle: Je Symbol 4 Bytes Nummer, 4 Bytes Laenge des Namens, Name in ASCII
-- Footer: 1 Byte Pruefsumme 1 (ALLE Bytes bis auf den Footer addiert Modulo 256), 1 Byte Pruefsumme 2 (ALLE Bytes bis auf den Footer XOR-verknuepft)
+Data:
+- Code: Bytecode
+- Symbol table: For each symbol: 4 bytes symbol number, 4 bytes length of name in bytes, name as ASCII, no 0x00 at the end
+- Footer: Two checksums of 1 byte each: Take all bytes up until the start of the footer block, and 1. add them modulo 256, 2. XOR them together
 
 --------------------------------------------------------------------------------
 
-Aufbau Prototyp:
+Runtime:
 
-- Little Endian
-- Integer-Werte sind IMMER signed, 32 Bit
-- Drei Stacks: Callstack (Paare von IP/number-of-arguments), Environment, Value-Stack
-- Bei Programmstart enthaelt der Environment-Stack bereits ein Environment (global), die anderen Stacks sind leer
-- Symboltabelle mit Zuordnung von Symbolnummer zu Name, nur fuer Debugging-Zwecke
-- Erst mal nur Int32 und Bool
+- Everything is little endian
+- Integer values are signed, 32 bit
+- Three stacks: Function calls, Environment, Values
+- On program start the environment stack contains a (global) environment, the other stacks are empty
+- Symbol table for assigning numbers to symbols (think Scheme symbols or Erlang atoms)
 
 --------------------------------------------------------------------------------
 
-Assembler-Direktiven:
+Assembler directives:
 
-labelx:
-Definiert eine Sprungmarke
 
-FUNCTION name parameters [&closingover closing-variables]
-Pusht die Labels label0 und label1 auf einen "Funktions-Stack" im Assembler, expandiert zu
+blub:
+Any symbol followed by a colon defines a label.
+
+
+FUNCTION name parameters [&closingover closing-variables] [&localdefines localvariables]
+Generate two new, unique labels, and expand to:
    JMP label0
  label1:
-   ENTER (length parameters + length closing-variables) fac
+   ENTER (length parameters + length closing-variables) name
    DEFINE parameterN
    ...
    DEFINE parameter1
@@ -100,24 +54,32 @@ Pusht die Labels label0 und label1 auf einen "Funktions-Stack" im Assembler, exp
    ...
    DEFINE closing-variable1
    DEFINE closing-variable0
+   NEWVAR localvariable0
+   NEWVAR localvariable1
+   ...
+   NEWVAR localvariableN
    POP
 
+
 ENDFUNCTION
-Poppt die Labels label0 und label1 vom "Funktions-Stack" im Assembler, expandiert zu
+Get data of the function being defined, and expand to
  label0:
    PUSHLABEL label1
    DEFINE name
 
-Falls zuvor eine Closure definiert wurde, wird zusaetzlich folgendes angehaengt:
+If a closure was being defined, add the following:
   PUSHVAR name
   PUSHSYM closing-variable0
   PUSHSYM closing-variable1
   ...
   PUSHSYM closing-variableN
-  MAKECLOSURE (length closing-variablen)
+  MAKECLOSURE (length closing-variables)
   SET name
 
 --------------------------------------------------------------------------------
+
+Assembler opcodes:
+
 
 END
 0x00
