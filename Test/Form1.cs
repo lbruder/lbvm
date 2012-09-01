@@ -21,7 +21,7 @@ namespace Test
             {
                 textBox1.Text = "";
                 var assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text);
-                //textBox1.Text = string.Join("\r\n", assemblerSource);
+                textBox1.Text = string.Join("\r\n", assemblerSource);
                 var program = org.lb.lbvm.Assembler.Assemble(assemblerSource);
                 //Disassemble(program);
                 Run(program);

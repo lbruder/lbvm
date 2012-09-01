@@ -14,13 +14,15 @@ namespace org.lb.lbvm.scheme
     }
 
     // TODO: lambda, quote, begin
-    // TODO: cond, or, and / macro system
+    // TODO: or, and / macro system
 
     public sealed class Compiler
     {
         private readonly List<string> CompiledSource = new List<string>();
         private readonly Symbol defineSymbol = new Symbol("define");
         private readonly Symbol ifSymbol = new Symbol("if");
+        private readonly Symbol elseSymbol = new Symbol("else");
+        private readonly Symbol condSymbol = new Symbol("cond");
         private readonly Symbol numericEqualSymbol = new Symbol("=");
         private readonly Symbol plusSymbol = new Symbol("+");
         private readonly Symbol minusSymbol = new Symbol("-");
@@ -30,7 +32,7 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol gtSymbol = new Symbol(">");
         private readonly Symbol leSymbol = new Symbol("<=");
         private readonly Symbol geSymbol = new Symbol(">=");
-        private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin" };
+        private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond" };
         private readonly List<Symbol> optimizedSymbols;
 
         public static string[] Compile(string source)
@@ -40,16 +42,9 @@ namespace org.lb.lbvm.scheme
 
         private Compiler(string source)
         {
-            optimizedSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, leSymbol, ltSymbol, geSymbol, gtSymbol };
+            optimizedSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol };
             var readSource = new Reader().ReadAll(source).ToList();
-
-            for (int i = 0; i < readSource.Count; ++i)
-            {
-                bool isLastStatement = i == readSource.Count - 1;
-                CompileStatement(readSource[i], false);
-                if (!isLastStatement) Emit("POP");
-            }
-
+            CompileBlock(readSource, false);
             Emit("END");
         }
 
@@ -84,6 +79,7 @@ namespace org.lb.lbvm.scheme
         {
             if (value.Count > 1 && defineSymbol.Equals(value[0])) CompileDefine(value);
             else if (value.Count == 4 && ifSymbol.Equals(value[0])) CompileIf(value, tailCall);
+            else if (value.Count > 0 && condSymbol.Equals(value[0])) CompileCond(value, tailCall);
             else if (value.Count == 3 && numericEqualSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMEQUAL");
             else if (value.Count == 3 && plusSymbol.Equals(value[0])) CompileNumericOperation(value, "ADD");
             else if (value.Count == 3 && minusSymbol.Equals(value[0])) CompileNumericOperation(value, "SUB");
@@ -198,6 +194,43 @@ namespace org.lb.lbvm.scheme
         private string GenerateLabel()
         {
             return "##compiler__label##" + nextGeneratedLabelNumber++;
+        }
+
+        private void CompileCond(List<object> value, bool tailCall)
+        {
+            string doneLabel = GenerateLabel();
+            foreach (object o in value.Skip(1))
+            {
+                if (!(o is List<object>)) throw new CompilerException("Invalid COND form");
+                var list = (List<object>)o;
+                if (list.Count < 2) throw new CompilerException("Invalid COND form");
+
+                if (elseSymbol.Equals(list[0]))
+                {
+                    CompileBlock(list.Skip(1).ToList(), tailCall);
+                    Emit("JMP " + doneLabel);
+                }
+                else
+                {
+                    CompileStatement(list[0], false);
+                    string falseLabel = GenerateLabel();
+                    Emit("BFALSE " + falseLabel);
+                    CompileBlock(list.Skip(1).ToList(), tailCall);
+                    Emit("JMP " + doneLabel);
+                    Emit(falseLabel + ":");
+                }
+            }
+            Emit(doneLabel + ":");
+        }
+
+        private void CompileBlock(List<object> statements, bool tailCall)
+        {
+            for (int i = 0; i < statements.Count; ++i)
+            {
+                bool isLastStatement = i == statements.Count - 1;
+                CompileStatement(statements[i], tailCall && isLastStatement);
+                if (!isLastStatement) Emit("POP");
+            }
         }
 
         private void CompileNumericOperation(List<object> values, string op)
