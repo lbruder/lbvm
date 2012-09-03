@@ -466,6 +466,68 @@ namespace org.lb.lbvm.runtime
         }
     }
 
+    public sealed class MakepairStatement : Statement
+    {
+        internal MakepairStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "MAKEPAIR"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o1 = valueStack.Pop();
+            object o2 = valueStack.Pop();
+            valueStack.Push(new Pair(o2, o1));
+            ip += Length;
+        }
+    }
+
+    public sealed class IspairStatement : Statement
+    {
+        internal IspairStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "ISPAIR"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            valueStack.Push(valueStack.Pop() is Pair);
+            ip += Length;
+        }
+    }
+
+    public sealed class Pair1Statement : Statement
+    {
+        internal Pair1Statement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "PAIR1"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            valueStack.Push(((Pair)valueStack.Pop()).First);
+            ip += Length;
+        }
+    }
+
+    public sealed class Pair2Statement : Statement
+    {
+        internal Pair2Statement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "PAIR2"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            valueStack.Push(((Pair)valueStack.Pop()).Second);
+            ip += Length;
+        }
+    }
+
+    public sealed class PushnilStatement : Statement
+    {
+        internal PushnilStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "PUSHNIL"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            valueStack.Push(Nil.GetInstance());
+            ip += Length;
+        }
+    }
+
     public sealed class ErrorStatement : Statement
     {
         internal ErrorStatement() { }

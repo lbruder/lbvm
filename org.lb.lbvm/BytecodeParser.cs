@@ -71,6 +71,11 @@ namespace org.lb.lbvm
                 case 0x1b: statements.Add(new runtime.NumgeStatement()); return;
                 case 0x1c: statements.Add(new runtime.PushdblStatement(ReadDouble())); return;
                 case 0x1d: tmp = ReadInt(); statements.Add(new runtime.MakevarStatement(tmp, GetSymbolTableEntry(tmp))); return;
+                case 0x1e: statements.Add(new runtime.MakepairStatement()); return;
+                case 0x1f: statements.Add(new runtime.IspairStatement()); return;
+                case 0x20: statements.Add(new runtime.Pair1Statement()); return;
+                case 0x21: statements.Add(new runtime.Pair2Statement()); return;
+                case 0x22: statements.Add(new runtime.PushnilStatement()); return;
                 default: throw new InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
         }

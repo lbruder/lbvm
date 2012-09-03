@@ -20,10 +20,8 @@ namespace Test
             try
             {
                 textBox1.Text = "";
-                var assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text);
-                textBox1.Text = string.Join("\r\n", assemblerSource);
-                var program = org.lb.lbvm.Assembler.Assemble(assemblerSource);
-                //Disassemble(program);
+                var program = org.lb.lbvm.Assembler.Assemble(org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text));
+                //WriteFile(program);
                 Run(program);
             }
             catch (Exception ex)

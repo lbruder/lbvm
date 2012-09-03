@@ -207,6 +207,26 @@ MAKEVAR <variable>
 0x1d (Symbolnummer)
 Erzeugt die Variable mit der angegebenen Symbolnummer im Environment-TOS und setzt sie auf den Wert UNASSIGNED.
 
+MAKEPAIR
+0x1e
+POPpt zwei Werte vom Value-Stack und PUSHt das Paar (TOS-1, TOS).
+
+ISPAIR
+0x1f
+POPpt einen Wert vom Value-Stack und PUSHt true, wenn der Wert ein Paar war, ansonsten false.
+
+PAIR1
+0x20
+POPpt ein Paar vom Value-Stack und PUSHt dessen ersten Wert zurück.
+
+PAIR2
+0x21
+POPpt ein Paar vom Value-Stack und PUSHt dessen zweiten Wert zurück.
+
+PUSHNIL
+0x22
+PUSHt den speziellen Wert NIL auf den Value-Stack.
+
 ERROR
 0xff
 Programmfehler

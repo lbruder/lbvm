@@ -117,40 +117,8 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="textBox2.Text" xml:space="preserve">
-    <value>(define (average x y)
-  (/ (+ x y) 2))
-
-(define (square x)
-  (* x x))
-
-(define (sqrt x)
-  (define (good-enough? guess)
-    (&lt; (abs (- (square guess) x)) 0.001))
-  (define (improve guess)
-    (average guess (/ x guess)))
-  (define (iter guess)
-    (if (good-enough? guess)
-        guess
-        (iter (improve guess))))
-  (iter 1.0))
-
-(define (isprime n)
-  (define (test i)
-    (if (&gt;= i n)
-        #t
-        (if (= 0 (rem n i))
-            #f
-            (test (+ i 2)))))
-  (if (&lt; n 4)
-      (&gt; n 1)
-      (if (= 0 (rem n 2))
-          #f
-          (test 3))))
-
-(define (primes upto)
-  (filter isprime (range 1 upto 1)))
-
-(primes 100)</value>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="SchemeInitScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SchemeInitScript.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
   </data>
 </root>

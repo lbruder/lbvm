@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using org.lb.lbvm.Properties;
 
 namespace org.lb.lbvm.scheme
 {
     // TODO: lambda, quote, begin
-    // TODO: or, and / macro system
+    // TODO: let, or, and / macro system (if macros, then move COND to macro aswell)
 
     public sealed class Compiler
     {
@@ -15,26 +15,33 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol ifSymbol = new Symbol("if");
         private readonly Symbol elseSymbol = new Symbol("else");
         private readonly Symbol condSymbol = new Symbol("cond");
+        private readonly Symbol consSymbol = new Symbol("cons");
+        private readonly Symbol conspSymbol = new Symbol("pair?");
+        private readonly Symbol carSymbol = new Symbol("car");
+        private readonly Symbol cdrSymbol = new Symbol("cdr");
+        private readonly Symbol nilSymbol = new Symbol("nil");
         private readonly Symbol numericEqualSymbol = new Symbol("=");
         private readonly Symbol plusSymbol = new Symbol("+");
         private readonly Symbol minusSymbol = new Symbol("-");
         private readonly Symbol starSymbol = new Symbol("*");
         private readonly Symbol slashSymbol = new Symbol("/");
+        private readonly Symbol remSymbol = new Symbol("rem");
         private readonly Symbol ltSymbol = new Symbol("<");
         private readonly Symbol gtSymbol = new Symbol(">");
         private readonly Symbol leSymbol = new Symbol("<=");
         private readonly Symbol geSymbol = new Symbol(">=");
         private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond" };
-        private readonly List<Symbol> optimizedSymbols;
+        private readonly List<Symbol> optimizedFunctionSymbols;
 
         public static string[] Compile(string source)
         {
-            return new Compiler("(define (##compiler__main##) " + source + ") (##compiler__main##)").CompiledSource.ToArray();
+            return new Compiler("(define (##compiler__main##) " + Resources.SchemeInitScript + "\n" + source + ") (##compiler__main##)").CompiledSource.ToArray();
         }
 
         private Compiler(string source)
         {
-            optimizedSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol };
+            optimizedFunctionSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, remSymbol,
+                leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol};
             var readSource = new Reader().ReadAll(source).ToList();
             CompileBlock(readSource, false);
             Emit("END");
@@ -46,6 +53,7 @@ namespace org.lb.lbvm.scheme
             else if (o is int) Emit("PUSHINT " + (int)o);
             else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
             else if (o is string) Emit("PUSHSTR \"" + EscapeString((string)o) + "\"");
+            else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
             else if (o is Symbol) Emit("PUSHVAR " + ((Symbol)o).Name);
             else if (o is List<object>) CompileList((List<object>)o, tailCall);
             else throw new CompilerException("Internal error: I don't know how to compile object of type " + o.GetType());
@@ -69,18 +77,26 @@ namespace org.lb.lbvm.scheme
 
         private void CompileList(List<object> value, bool tailCall)
         {
-            if (value.Count > 1 && defineSymbol.Equals(value[0])) CompileDefine(value);
-            else if (value.Count == 4 && ifSymbol.Equals(value[0])) CompileIf(value, tailCall);
-            else if (value.Count > 0 && condSymbol.Equals(value[0])) CompileCond(value, tailCall);
-            else if (value.Count == 3 && numericEqualSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMEQUAL");
-            else if (value.Count == 3 && plusSymbol.Equals(value[0])) CompileNumericOperation(value, "ADD");
-            else if (value.Count == 3 && minusSymbol.Equals(value[0])) CompileNumericOperation(value, "SUB");
-            else if (value.Count == 3 && starSymbol.Equals(value[0])) CompileNumericOperation(value, "MUL");
-            else if (value.Count == 3 && slashSymbol.Equals(value[0])) CompileNumericOperation(value, "DIV");
-            else if (value.Count == 3 && ltSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMLT");
-            else if (value.Count == 3 && leSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMLE");
-            else if (value.Count == 3 && gtSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMGT");
-            else if (value.Count == 3 && geSymbol.Equals(value[0])) CompileNumericOperation(value, "NUMGE");
+            if (value.Count == 0) throw new CompilerException("Empty list cannot be called as a function");
+            object firstValue = value[0];
+
+            if (defineSymbol.Equals(firstValue)) CompileDefine(value);
+            else if (ifSymbol.Equals(firstValue)) CompileIf(value, tailCall);
+            else if (condSymbol.Equals(firstValue)) CompileCond(value, tailCall);
+            else if (numericEqualSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMEQUAL");
+            else if (plusSymbol.Equals(firstValue)) CompileBinaryOperation(value, "ADD");
+            else if (minusSymbol.Equals(firstValue)) CompileBinaryOperation(value, "SUB");
+            else if (starSymbol.Equals(firstValue)) CompileBinaryOperation(value, "MUL");
+            else if (slashSymbol.Equals(firstValue)) CompileBinaryOperation(value, "DIV");
+            else if (remSymbol.Equals(firstValue)) CompileBinaryOperation(value, "IMOD");
+            else if (ltSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMLT");
+            else if (leSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMLE");
+            else if (gtSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMGT");
+            else if (geSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMGE");
+            else if (consSymbol.Equals(firstValue)) CompileBinaryOperation(value, "MAKEPAIR");
+            else if (conspSymbol.Equals(firstValue)) CompileUnaryOperation(value, "ISPAIR");
+            else if (carSymbol.Equals(firstValue)) CompileUnaryOperation(value, "PAIR1");
+            else if (cdrSymbol.Equals(firstValue)) CompileUnaryOperation(value, "PAIR2");
             else CompileFunctionCall(value, tailCall);
         }
 
@@ -99,7 +115,7 @@ namespace org.lb.lbvm.scheme
             HashSet<string> defines = new HashSet<string>();
             List<string> freeVariables = FindFreeVariablesInLambda(parameters, body, defines).ToList();
             foreach (string i in defines) freeVariables.Remove(i);
-            
+
             string functionLine = "FUNCTION " + name + " " + string.Join(" ", parameters);
             if (freeVariables.Count > 0) functionLine += " &closingover " + string.Join(" ", freeVariables);
             if (defines.Count > 0) functionLine += " &localdefines " + string.Join(" ", defines);
@@ -126,6 +142,7 @@ namespace org.lb.lbvm.scheme
         {
             HashSet<string> accessedVariables = new HashSet<string>();
             foreach (object o in body) FindAccessedVariables(o, accessedVariables, localVariablesDefinedInLambda);
+            accessedVariables.Remove("nil");
             foreach (string p in parameters) accessedVariables.Remove(p);
             return accessedVariables;
         }
@@ -150,7 +167,7 @@ namespace org.lb.lbvm.scheme
                     bool first = true;
                     foreach (object i in list)
                     {
-                        if (first && optimizedSymbols.Contains(i)) first = false;
+                        if (first && optimizedFunctionSymbols.Contains(i)) first = false;
                         else FindAccessedVariables(i, accessedVariables, definedVariables);
                     }
                 }
@@ -181,6 +198,11 @@ namespace org.lb.lbvm.scheme
             Emit(doneLabel + ":");
         }
 
+        private void AssertParameterCount(int expected, int got, string function)
+        {
+            if (expected != got) throw new CompilerException(function + ": Expected " + expected + " parameters, got " + got);
+        }
+
         private int nextGeneratedLabelNumber;
 
         private string GenerateLabel()
@@ -188,7 +210,7 @@ namespace org.lb.lbvm.scheme
             return "##compiler__label##" + nextGeneratedLabelNumber++;
         }
 
-        private void CompileCond(List<object> value, bool tailCall)
+        private void CompileCond(IEnumerable<object> value, bool tailCall)
         {
             string doneLabel = GenerateLabel();
             foreach (object o in value.Skip(1))
@@ -225,8 +247,16 @@ namespace org.lb.lbvm.scheme
             }
         }
 
-        private void CompileNumericOperation(List<object> values, string op)
+        private void CompileUnaryOperation(List<object> values, string op)
         {
+            AssertParameterCount(2, values.Count, op);
+            CompileStatement(values[1], false);
+            Emit(op);
+        }
+
+        private void CompileBinaryOperation(List<object> values, string op)
+        {
+            AssertParameterCount(3, values.Count, op);
             CompileStatement(values[1], false);
             CompileStatement(values[2], false);
             Emit(op);

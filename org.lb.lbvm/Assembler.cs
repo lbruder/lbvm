@@ -191,6 +191,11 @@ namespace org.lb.lbvm
                 case "NUMGE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1b); break;
                 case "PUSHDBL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1c); EmitDouble(double.Parse(line[1], NumberStyles.Any, CultureInfo.InvariantCulture)); break;
                 case "MAKEVAR": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1d); EmitSymbol(line[1]); break;
+                case "MAKEPAIR": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1e); break;
+                case "ISPAIR": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1f); break;
+                case "PAIR1": AssertParameterCount(parameterCount, 0, opcode); Emit(0x20); break;
+                case "PAIR2": AssertParameterCount(parameterCount, 0, opcode); Emit(0x21); break;
+                case "PUSHNIL": AssertParameterCount(parameterCount, 0, opcode); Emit(0x22); break;
                 case "ERROR": AssertParameterCount(parameterCount, 0, opcode); Emit(0xff); break;
                 default: throw new AssemblerException("Invalid opcode: " + opcode);
             }
