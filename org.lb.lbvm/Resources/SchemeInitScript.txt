@@ -1,18 +1,17 @@
 (define (cons a b) (cons a b))
 (define (pair? x) (pair? x))
-(define (car x) (car x))
-(define (cdr x) (cdr x))
 (define (+ a b) (+ a b))
 (define (- a b) (- a b))
 (define (* a b) (* a b))
 (define (/ a b) (/ a b))
 (define (= a b) (= a b))
-(define (remainder a b) (remainder a b)) ; TODO: modulo! Aufpassen!!!
-(define (quotient a b) (quotient a b))
 (define (< a b) (< a b))
 (define (<= a b) (<= a b))
 (define (> a b) (> a b))
 (define (>= a b) (>= a b))
+
+(define (car x) (car x))
+(define (cdr x) (cdr x))
 
 (define (caar x) (car (car x)))
 (define (cadr x) (car (cdr x)))
@@ -44,6 +43,23 @@
   (if (positive? x)
       x
       (- 0 x)))
+
+(define (quotient a b)
+  (quotient a b))
+
+(define (sys:sign x)
+  (if (>= x 0)
+      1
+      -1))
+
+(define (remainder a b)
+  (* (sys:sign a)
+     (abs (sys:imod a b))))
+
+(define (modulo a b)
+  (if (= (sys:sign a) (sys:sign b))
+      (sys:imod a b)
+      (+ b (sys:imod a b))))
 
 (define (even? x)
   (zero? (remainder x 2)))
@@ -78,6 +94,11 @@
             (iter acc (cdr current)))
         (reverse acc)))
   (iter nil lst))
+
+(define (fold f acc lst)
+  (if (pair? lst)
+      (fold f (f acc (car lst)) (cdr lst))
+      acc))
 
 (define (range from to . rest)
   (define (iter acc current step)
@@ -122,3 +143,22 @@
 
 (define (list-ref lst k)
   (car (list-tail lst k)))
+
+(define (sys:gcd-of-two a b)
+  (if (= b 0)
+      a
+      (sys:gcd-of-two b (remainder a b))))
+
+(define (gcd . args)
+  (if (zero? (length args))
+      0
+      (abs (fold sys:gcd-of-two (car args) (cdr args)))))
+
+(define (sys:lcm-of-two a b)
+  (/ (* a b)
+     (sys:gcd-of-two a b)))
+
+(define (lcm . args)
+  (if (zero? (length args))
+      1
+      (abs (fold sys:lcm-of-two (car args) (cdr args)))))

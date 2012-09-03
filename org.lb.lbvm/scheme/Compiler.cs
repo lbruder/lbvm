@@ -25,7 +25,7 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol minusSymbol = new Symbol("-");
         private readonly Symbol starSymbol = new Symbol("*");
         private readonly Symbol slashSymbol = new Symbol("/");
-        private readonly Symbol imodSymbol = new Symbol("remainder");
+        private readonly Symbol imodSymbol = new Symbol("sys:imod");
         private readonly Symbol idivSymbol = new Symbol("quotient");
         private readonly Symbol ltSymbol = new Symbol("<");
         private readonly Symbol gtSymbol = new Symbol(">");
@@ -113,6 +113,10 @@ namespace org.lb.lbvm.scheme
             AssertAllFunctionParametersAreSymbols(functionNameAndParameters);
 
             string name = ((Symbol)functionNameAndParameters[0]).Name;
+            if (name == "lcm")
+            {
+                name = name + "";
+            }
 
             List<string> parameters = functionNameAndParameters.Skip(1).Select(i => ((Symbol)i).Name).ToList();
             bool hasRestParameter = parameters.Any(i => i == ".");
@@ -181,8 +185,9 @@ namespace org.lb.lbvm.scheme
                     bool first = true;
                     foreach (object i in list)
                     {
-                        if (first && optimizedFunctionSymbols.Contains(i)) first = false;
-                        else FindAccessedVariables(i, accessedVariables, definedVariables);
+                        if (!(first && optimizedFunctionSymbols.Contains(i)))
+                            FindAccessedVariables(i, accessedVariables, definedVariables);
+                        first = false;
                     }
                 }
             }
