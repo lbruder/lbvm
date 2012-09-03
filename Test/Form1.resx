@@ -137,16 +137,12 @@
 
 (define (isprime n)
   (define (test i)
-    (if (&gt;= i n)
-        #t
-        (if (= 0 (rem n i))
-            #f
-            (test (+ i 2)))))
-  (if (&lt; n 4)
-      (&gt; n 1)
-      (if (= 0 (rem n 2))
-          #f
-          (test 3))))
+    (cond ((&gt;= i n) #t)
+          ((zero? (remainder n i)) #f)
+          (else (test (+ i 2)))))
+  (cond ((&lt; n 4) (&gt; n 1))
+        ((even? n) #f)
+        (else (test 3))))
 
 (define (primes upto)
   (filter isprime (range 1 upto 1)))

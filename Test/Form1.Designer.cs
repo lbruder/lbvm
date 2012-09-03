@@ -65,7 +65,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.textBox1);
             this.splitContainer1.Size = new System.Drawing.Size(924, 530);
-            this.splitContainer1.SplitterDistance = 647;
+            this.splitContainer1.SplitterDistance = 456;
             this.splitContainer1.TabIndex = 3;
             // 
             // textBox2
@@ -76,7 +76,7 @@
             this.textBox2.Multiline = true;
             this.textBox2.Name = "textBox2";
             this.textBox2.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.textBox2.Size = new System.Drawing.Size(647, 530);
+            this.textBox2.Size = new System.Drawing.Size(456, 530);
             this.textBox2.TabIndex = 3;
             this.textBox2.Text = resources.GetString("textBox2.Text");
             this.textBox2.WordWrap = false;
@@ -90,10 +90,9 @@
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
             this.textBox1.ReadOnly = true;
-            this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.textBox1.Size = new System.Drawing.Size(273, 530);
+            this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.textBox1.Size = new System.Drawing.Size(464, 530);
             this.textBox1.TabIndex = 2;
-            this.textBox1.WordWrap = false;
             // 
             // Form1
             // 

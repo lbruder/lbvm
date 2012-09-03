@@ -227,6 +227,13 @@ PUSHNIL
 0x22
 PUSHt den speziellen Wert NIL auf den Value-Stack.
 
+ENTERR <number-of-parameters> <number-of-parameters-to-skip> <name>
+0x23 (Parameteranzahl) (Symbolnummer)
+Analog ENTER, aber POPpt alle Werte, die "zuviel" an die Funktion uebergeben wurden, erzeugt daraus eine Liste,
+und PUSHt diese als "letzten Parameter" auf den Stack. Die letzten <number-of-parameters-to-skip> Parameter werden
+dabei uebersprungen, um weiterhin Closures verwenden zu koennen.
+
+
 ERROR
 0xff
 Programmfehler

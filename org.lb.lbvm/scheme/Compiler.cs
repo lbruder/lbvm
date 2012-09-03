@@ -25,7 +25,8 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol minusSymbol = new Symbol("-");
         private readonly Symbol starSymbol = new Symbol("*");
         private readonly Symbol slashSymbol = new Symbol("/");
-        private readonly Symbol remSymbol = new Symbol("rem");
+        private readonly Symbol imodSymbol = new Symbol("remainder");
+        private readonly Symbol idivSymbol = new Symbol("quotient");
         private readonly Symbol ltSymbol = new Symbol("<");
         private readonly Symbol gtSymbol = new Symbol(">");
         private readonly Symbol leSymbol = new Symbol("<=");
@@ -40,7 +41,7 @@ namespace org.lb.lbvm.scheme
 
         private Compiler(string source)
         {
-            optimizedFunctionSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, remSymbol,
+            optimizedFunctionSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, imodSymbol, idivSymbol,
                 leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol};
             var readSource = new Reader().ReadAll(source).ToList();
             CompileBlock(readSource, false);
@@ -88,7 +89,8 @@ namespace org.lb.lbvm.scheme
             else if (minusSymbol.Equals(firstValue)) CompileBinaryOperation(value, "SUB");
             else if (starSymbol.Equals(firstValue)) CompileBinaryOperation(value, "MUL");
             else if (slashSymbol.Equals(firstValue)) CompileBinaryOperation(value, "DIV");
-            else if (remSymbol.Equals(firstValue)) CompileBinaryOperation(value, "IMOD");
+            else if (imodSymbol.Equals(firstValue)) CompileBinaryOperation(value, "IMOD");
+            else if (idivSymbol.Equals(firstValue)) CompileBinaryOperation(value, "IDIV");
             else if (ltSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMLT");
             else if (leSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMLE");
             else if (gtSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMGT");
@@ -111,12 +113,24 @@ namespace org.lb.lbvm.scheme
             AssertAllFunctionParametersAreSymbols(functionNameAndParameters);
 
             string name = ((Symbol)functionNameAndParameters[0]).Name;
+
             List<string> parameters = functionNameAndParameters.Skip(1).Select(i => ((Symbol)i).Name).ToList();
+            bool hasRestParameter = parameters.Any(i => i == ".");
+            string restParameter = "";
+            if (hasRestParameter)
+            {
+                if (!(parameters.Count > 1 && parameters[parameters.Count - 2] == ".")) throw new CompilerException(name + ": There may be only one rest parameter in function definition");
+                restParameter = parameters[parameters.Count - 1];
+                parameters.RemoveRange(parameters.Count - 2, 2);
+            }
+
             HashSet<string> defines = new HashSet<string>();
             List<string> freeVariables = FindFreeVariablesInLambda(parameters, body, defines).ToList();
             foreach (string i in defines) freeVariables.Remove(i);
+            freeVariables.Remove(restParameter);
 
             string functionLine = "FUNCTION " + name + " " + string.Join(" ", parameters);
+            if (hasRestParameter) functionLine += " &rest " + restParameter;
             if (freeVariables.Count > 0) functionLine += " &closingover " + string.Join(" ", freeVariables);
             if (defines.Count > 0) functionLine += " &localdefines " + string.Join(" ", defines);
             Emit(functionLine);

@@ -70,6 +70,7 @@ namespace org.lb.lbvm
         private enum Mode
         {
             Parameter,
+            Rest,
             ClosingOverVariable,
             LocalDefines
         };
@@ -100,22 +101,33 @@ namespace org.lb.lbvm
             List<string> parameters = new List<string>();
             List<string> closingOverVariables = new List<string>();
             List<string> localDefines = new List<string>();
+            string restParameter = "";
             Mode mode = Mode.Parameter;
             for (int i = 2; i < line.Length; ++i)
             {
                 if (line[i] == "") continue;
                 if (line[i].ToLower() == "&closingover") mode = Mode.ClosingOverVariable;
+                else if (line[i].ToLower() == "&rest") mode = Mode.Rest;
                 else if (line[i].ToLower() == "&localdefines") mode = Mode.LocalDefines;
                 else if (mode == Mode.Parameter) parameters.Add(line[i]);
                 else if (mode == Mode.ClosingOverVariable) closingOverVariables.Add(line[i]);
                 else if (mode == Mode.LocalDefines) localDefines.Add(line[i]);
+                else if (mode == Mode.Rest)
+                {
+                    if (restParameter != "") throw new AssemblerException(name + ": Only one rest parameter allowed in function definition");
+                    restParameter = line[i];
+                }
                 else throw new AssemblerException("Internal error 1 in assembler");
             }
             functionStatements.Push(new FunctionStatement(name, labelStart, labelEnd, closingOverVariables));
+            if (restParameter != "") parameters.Add(restParameter);
 
             ParseLine("JMP " + labelEnd);
             ParseLine(labelStart + ":");
-            ParseLine("ENTER " + (parameters.Count + closingOverVariables.Count) + " " + name);
+            if (restParameter == "")
+                ParseLine("ENTER " + (parameters.Count + closingOverVariables.Count) + " " + name);
+            else
+                ParseLine("ENTERR " + (parameters.Count + closingOverVariables.Count) + " " + closingOverVariables.Count + " " + name);
             foreach (string v in localDefines) ParseLine("MAKEVAR " + v);
             var closingReversed = new List<string>(closingOverVariables);
             closingReversed.Reverse();
@@ -196,6 +208,7 @@ namespace org.lb.lbvm
                 case "PAIR1": AssertParameterCount(parameterCount, 0, opcode); Emit(0x20); break;
                 case "PAIR2": AssertParameterCount(parameterCount, 0, opcode); Emit(0x21); break;
                 case "PUSHNIL": AssertParameterCount(parameterCount, 0, opcode); Emit(0x22); break;
+                case "ENTERR": AssertParameterCount(parameterCount, 3, opcode); Emit(0x23); EmitInt(int.Parse(line[1])); EmitInt(int.Parse(line[2])); EmitSymbol(line[3]); break;
                 case "ERROR": AssertParameterCount(parameterCount, 0, opcode); Emit(0xff); break;
                 default: throw new AssemblerException("Invalid opcode: " + opcode);
             }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 
@@ -20,14 +19,28 @@ namespace Test
             try
             {
                 textBox1.Text = "";
-                var program = org.lb.lbvm.Assembler.Assemble(org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text));
+                string[] assemblerSource = null;
+                org.lb.lbvm.Program program = null;
+                Measure("Compiler", () => assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text));
+                Measure("Assembler", () => program = org.lb.lbvm.Assembler.Assemble(assemblerSource));
                 //WriteFile(program);
-                Run(program);
+                object result = null;
+                Measure("Runtime", () => result = program.Run());
+                textBox1.Text += "\r\n" + result + "\r\n" + result.GetType();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                textBox1.Text += "\r\n" + ex.Message;
             }
+        }
+
+        private void Measure(string name, Action f)
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+            f();
+            sw.Stop();
+            textBox1.Text += name + ": " + sw.Elapsed + "\r\n";
         }
 
         private static void WriteFile(org.lb.lbvm.Program program)
@@ -53,19 +66,6 @@ namespace Test
                 offset += s.Length;
             }
             textBox1.Text = t;
-        }
-
-        private void Run(org.lb.lbvm.Program program)
-        {
-            var sw1 = new Stopwatch();
-            sw1.Start();
-            object o;
-            try { o = program.Run(); }
-            catch (Exception ex) { o = ex.Message; }
-            sw1.Stop();
-            textBox1.Text += string.Format(CultureInfo.InvariantCulture, "\r\n{0}\r\n{1}\r\n{2}\r\n", o, o.GetType(), sw1.Elapsed);
-            textBox1.Select(textBox1.Text.Length - 1, 0);
-            textBox1.ScrollToCaret();
         }
 
         private void textBox2_KeyUp(object sender, KeyEventArgs e)

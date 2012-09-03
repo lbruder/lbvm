@@ -213,7 +213,34 @@ namespace org.lb.lbvm.runtime
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             if (callStack.Peek().NumberOfParameters != NumberOfParameters)
-                throw new RuntimeException(Symbol + ": Expected " + NumberOfParameters + " argument(s), got " + callStack.Peek().NumberOfParameters);
+                throw new RuntimeException(Symbol + ": Invalid parameter count");
+            envStack.Push(new Environment());
+            ip += Length;
+        }
+    }
+
+    public sealed class EnterRestStatement : Statement
+    {
+        internal EnterRestStatement(int numberOfParameters, int numberOfParametersToSkip, string symbol) { this.NumberOfParameters = numberOfParameters; this.NumberOfParametersToSkip = numberOfParametersToSkip; this.Symbol = symbol; }
+        private readonly int NumberOfParameters;
+        private readonly int NumberOfParametersToSkip;
+        private readonly string Symbol;
+        public override int Length { get { return 13; } }
+        protected override string Disassembled { get { return "ENTERR " + NumberOfParameters + " " + NumberOfParametersToSkip + " " + Symbol; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            int provided = callStack.Peek().NumberOfParameters;
+            if (provided < NumberOfParameters - 1) // -1 as there may be an empty list as rest parameter
+                throw new RuntimeException(Symbol + ": Invalid parameter count");
+
+            object restParameter = Nil.GetInstance();
+            var skipStack = new Stack<object>();
+            for (int i = 0; i < NumberOfParametersToSkip; ++i) skipStack.Push(valueStack.Pop());
+            int numberOfValuesForRestParameter = 1 + provided - NumberOfParameters;
+            for (int i = 0; i < numberOfValuesForRestParameter; ++i) restParameter = new Pair(valueStack.Pop(), restParameter);
+            valueStack.Push(restParameter);
+            for (int i = 0; i < NumberOfParametersToSkip; ++i) valueStack.Push(skipStack.Pop());
+
             envStack.Push(new Environment());
             ip += Length;
         }

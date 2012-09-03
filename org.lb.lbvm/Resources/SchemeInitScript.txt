@@ -7,19 +7,49 @@
 (define (* a b) (* a b))
 (define (/ a b) (/ a b))
 (define (= a b) (= a b))
-(define (rem a b) (rem a b))
+(define (remainder a b) (remainder a b)) ; TODO: modulo! Aufpassen!!!
+(define (quotient a b) (quotient a b))
 (define (< a b) (< a b))
 (define (<= a b) (<= a b))
 (define (> a b) (> a b))
 (define (>= a b) (>= a b))
 
+(define (caar x) (car (car x)))
+(define (cadr x) (car (cdr x)))
+(define (cdar x) (cdr (car x)))
+(define (cddr x) (cdr (cdr x)))
+
+(define (caaar x) (car (car (car x))))
+(define (caadr x) (car (car (cdr x))))
+(define (cadar x) (car (cdr (car x))))
+(define (caddr x) (car (cdr (cdr x))))
+(define (cdaar x) (cdr (car (car x))))
+(define (cdadr x) (cdr (car (cdr x))))
+(define (cddar x) (cdr (cdr (car x))))
+(define (cdddr x) (cdr (cdr (cdr x))))
+
+(define (list . lst)
+  lst)
+
 (define (zero? x)
   (= x 0))
 
+(define (positive? x)
+  (> x 0))
+
+(define (negative? x)
+  (< x 0))
+
 (define (abs x)
-  (if (< 0 x)
+  (if (positive? x)
       x
       (- 0 x)))
+
+(define (even? x)
+  (zero? (remainder x 2)))
+
+(define (odd? x)
+  (= 1 (remainder x 2)))
 
 (define (not x)
   (if x
@@ -49,12 +79,16 @@
         (reverse acc)))
   (iter nil lst))
 
-(define (range from to step)
-  (define (iter acc current)
+(define (range from to . rest)
+  (define (iter acc current step)
     (if (> current to)
         (reverse acc)
-        (iter (cons current acc) (+ current step))))
-  (iter nil from))
+        (iter (cons current acc) (+ current step) step)))
+  (iter nil
+        from
+        (if (pair? rest)
+            (car rest)
+            1)))
 
 (define (all? f lst)
   (define (iter current)
@@ -73,3 +107,18 @@
             (iter (cdr current)))
         #f))
   (iter lst))
+
+(define (length lst)
+  (define (iter acc current)
+    (if (pair? current)
+        (iter (+ 1 acc) (cdr current))
+        acc))
+  (iter 0 lst))
+
+(define (list-tail lst k)
+  (if (zero? k)
+      lst
+      (list-tail (cdr lst) (- k 1))))
+
+(define (list-ref lst k)
+  (car (list-tail lst k)))
