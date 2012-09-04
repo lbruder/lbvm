@@ -18,6 +18,14 @@ namespace org.lb.lbvm
             }
         }
 
+        private enum Mode
+        {
+            Parameter,
+            Rest,
+            ClosingOverVariable,
+            LocalDefines
+        };
+
         private readonly IEnumerable<string> SourceLines;
         private readonly List<byte> Bytecode = new List<byte>();
         private readonly List<string> SymbolTable = new List<string>();
@@ -66,14 +74,6 @@ namespace org.lb.lbvm
 
             AddStatement(line.Split(' '));
         }
-
-        private enum Mode
-        {
-            Parameter,
-            Rest,
-            ClosingOverVariable,
-            LocalDefines
-        };
 
         private sealed class FunctionStatement
         {
@@ -171,47 +171,46 @@ namespace org.lb.lbvm
             int parameterCount = line.Length - 1;
             string opcode = line[0].ToUpper();
 
-            switch (opcode)
+            var NullaryOpcodes = new Dictionary<string, byte>{
+                {"END", 0x00}, {"POP", 0x01}, {"NUMEQUAL", 0x05}, {"ADD", 0x06}, {"SUB", 0x07}, {"MUL", 0x08}, {"DIV", 0x09}, {"IDIV", 0x0a},
+                {"RET", 0x0d}, {"IMOD", 0x12}, {"PUSHTRUE", 0x15}, {"PUSHFALSE", 0x16}, {"NUMLT", 0x18}, {"NUMLE", 0x19}, {"NUMGT", 0x1a}, {"NUMGE", 0x1b},
+                {"MAKEPAIR", 0x1e}, {"ISPAIR", 0x1f}, {"PAIR1", 0x20}, {"PAIR2", 0x21}, {"PUSHNIL", 0x22}, {"RANDOM", 0x24}, {"ERROR", 0xff} };
+
+            var UnaryIntOpcodes = new Dictionary<string, byte> { { "PUSHINT", 0x02 }, { "CALL", 0x0e }, { "TAILCALL", 0x0f }, { "MAKECLOSURE", 0x17 } };
+            var UnarySymbolOpcodes = new Dictionary<string, byte> { { "DEFINE", 0x03 }, { "PUSHVAR", 0x04 }, { "SET", 0x13 }, { "PUSHSYM", 0x14 }, { "MAKEVAR", 0x1d } };
+            var UnaryLabelOpcodes = new Dictionary<string, byte> { { "BFALSE", 0x0b }, { "JMP", 0x10 }, { "PUSHLABEL", 0x11 } };
+
+            if (NullaryOpcodes.ContainsKey(opcode))
             {
-                case "END": AssertParameterCount(parameterCount, 0, opcode); Emit(0x00); break;
-                case "POP": AssertParameterCount(parameterCount, 0, opcode); Emit(0x01); break;
-                case "PUSHINT": AssertParameterCount(parameterCount, 1, opcode); Emit(0x02); EmitInt(int.Parse(line[1])); break;
-                case "DEFINE": AssertParameterCount(parameterCount, 1, opcode); Emit(0x03); EmitSymbol(line[1]); break;
-                case "PUSHVAR": AssertParameterCount(parameterCount, 1, opcode); Emit(0x04); EmitSymbol(line[1]); break;
-                case "NUMEQUAL": AssertParameterCount(parameterCount, 0, opcode); Emit(0x05); break;
-                case "ADD": AssertParameterCount(parameterCount, 0, opcode); Emit(0x06); break;
-                case "SUB": AssertParameterCount(parameterCount, 0, opcode); Emit(0x07); break;
-                case "MUL": AssertParameterCount(parameterCount, 0, opcode); Emit(0x08); break;
-                case "DIV": AssertParameterCount(parameterCount, 0, opcode); Emit(0x09); break;
-                case "IDIV": AssertParameterCount(parameterCount, 0, opcode); Emit(0x0a); break;
-                case "BFALSE": AssertParameterCount(parameterCount, 1, opcode); Emit(0x0b); EmitLabel(line[1]); break;
-                case "ENTER": AssertParameterCount(parameterCount, 2, opcode); Emit(0x0c); EmitInt(int.Parse(line[1])); EmitSymbol(line[2]); break;
-                case "RET": AssertParameterCount(parameterCount, 0, opcode); Emit(0x0d); break;
-                case "CALL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x0e); EmitInt(int.Parse(line[1])); break;
-                case "TAILCALL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x0f); EmitInt(int.Parse(line[1])); break;
-                case "JMP": AssertParameterCount(parameterCount, 1, opcode); Emit(0x10); EmitLabel(line[1]); break;
-                case "PUSHLABEL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x11); EmitLabel(line[1]); break;
-                case "IMOD": AssertParameterCount(parameterCount, 0, opcode); Emit(0x12); break;
-                case "SET": AssertParameterCount(parameterCount, 1, opcode); Emit(0x13); EmitSymbol(line[1]); break;
-                case "PUSHSYM": AssertParameterCount(parameterCount, 1, opcode); Emit(0x14); EmitSymbol(line[1]); break;
-                case "PUSHTRUE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x15); break;
-                case "PUSHFALSE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x16); break;
-                case "MAKECLOSURE": AssertParameterCount(parameterCount, 1, opcode); Emit(0x17); EmitInt(int.Parse(line[1])); break;
-                case "NUMLT": AssertParameterCount(parameterCount, 0, opcode); Emit(0x18); break;
-                case "NUMLE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x19); break;
-                case "NUMGT": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1a); break;
-                case "NUMGE": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1b); break;
-                case "PUSHDBL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1c); EmitDouble(double.Parse(line[1], NumberStyles.Any, CultureInfo.InvariantCulture)); break;
-                case "MAKEVAR": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1d); EmitSymbol(line[1]); break;
-                case "MAKEPAIR": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1e); break;
-                case "ISPAIR": AssertParameterCount(parameterCount, 0, opcode); Emit(0x1f); break;
-                case "PAIR1": AssertParameterCount(parameterCount, 0, opcode); Emit(0x20); break;
-                case "PAIR2": AssertParameterCount(parameterCount, 0, opcode); Emit(0x21); break;
-                case "PUSHNIL": AssertParameterCount(parameterCount, 0, opcode); Emit(0x22); break;
-                case "ENTERR": AssertParameterCount(parameterCount, 3, opcode); Emit(0x23); EmitInt(int.Parse(line[1])); EmitInt(int.Parse(line[2])); EmitSymbol(line[3]); break;
-                case "ERROR": AssertParameterCount(parameterCount, 0, opcode); Emit(0xff); break;
-                default: throw new AssemblerException("Invalid opcode: " + opcode);
+                AssertParameterCount(parameterCount, 0, opcode);
+                Emit(NullaryOpcodes[opcode]);
             }
+            else if (UnaryIntOpcodes.ContainsKey(opcode))
+            {
+                AssertParameterCount(parameterCount, 1, opcode);
+                Emit(UnaryIntOpcodes[opcode]);
+                EmitInt(int.Parse(line[1]));
+            }
+            else if (UnarySymbolOpcodes.ContainsKey(opcode))
+            {
+                AssertParameterCount(parameterCount, 1, opcode);
+                Emit(UnarySymbolOpcodes[opcode]);
+                EmitSymbol(line[1]);
+            }
+            else if (UnaryLabelOpcodes.ContainsKey(opcode))
+            {
+                AssertParameterCount(parameterCount, 1, opcode);
+                Emit(UnaryLabelOpcodes[opcode]);
+                EmitLabel(line[1]);
+            }
+            else
+                switch (opcode)
+                {
+                    case "PUSHDBL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1c); EmitDouble(double.Parse(line[1], NumberStyles.Any, CultureInfo.InvariantCulture)); break;
+                    case "ENTER": AssertParameterCount(parameterCount, 2, opcode); Emit(0x0c); EmitInt(int.Parse(line[1])); EmitSymbol(line[2]); break;
+                    case "ENTERR": AssertParameterCount(parameterCount, 3, opcode); Emit(0x23); EmitInt(int.Parse(line[1])); EmitInt(int.Parse(line[2])); EmitSymbol(line[3]); break;
+                    default: throw new AssemblerException("Invalid opcode: " + opcode);
+                }
         }
 
         private void AssertParameterCount(int parameterCount, int wanted, string opcode)

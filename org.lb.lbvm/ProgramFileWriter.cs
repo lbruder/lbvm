@@ -91,7 +91,7 @@ namespace org.lb.lbvm
 
         private void WriteFooter()
         {
-            byte[] block = new byte[] { checksum1, checksum2 };
+            byte[] block = new[] { checksum1, checksum2 };
             writeByte(0xff);
             WriteByteBlock(block);
         }

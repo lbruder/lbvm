@@ -31,6 +31,7 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol gtSymbol = new Symbol(">");
         private readonly Symbol leSymbol = new Symbol("<=");
         private readonly Symbol geSymbol = new Symbol(">=");
+        private readonly Symbol randomSymbol = new Symbol("random");
         private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond" };
         private readonly List<Symbol> optimizedFunctionSymbols;
 
@@ -42,7 +43,7 @@ namespace org.lb.lbvm.scheme
         private Compiler(string source)
         {
             optimizedFunctionSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, imodSymbol, idivSymbol,
-                leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol};
+                leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol, randomSymbol};
             var readSource = new Reader().ReadAll(source).ToList();
             CompileBlock(readSource, false);
             Emit("END");
@@ -63,7 +64,7 @@ namespace org.lb.lbvm.scheme
         private void Emit(string line)
         {
             CompiledSource.Add(line);
-            System.Diagnostics.Debug.Print("EMIT   " + line);
+            //System.Diagnostics.Debug.Print("EMIT   " + line);
         }
 
         private static string EscapeString(string value)
@@ -99,6 +100,7 @@ namespace org.lb.lbvm.scheme
             else if (conspSymbol.Equals(firstValue)) CompileUnaryOperation(value, "ISPAIR");
             else if (carSymbol.Equals(firstValue)) CompileUnaryOperation(value, "PAIR1");
             else if (cdrSymbol.Equals(firstValue)) CompileUnaryOperation(value, "PAIR2");
+            else if (randomSymbol.Equals(firstValue)) CompileUnaryOperation(value, "RANDOM");
             else CompileFunctionCall(value, tailCall);
         }
 

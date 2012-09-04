@@ -9,6 +9,7 @@
 (define (<= a b) (<= a b))
 (define (> a b) (> a b))
 (define (>= a b) (>= a b))
+(define (random x) (random x))
 
 (define (car x) (car x))
 (define (cdr x) (cdr x))

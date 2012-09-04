@@ -61,7 +61,7 @@ namespace org.lb.lbvm.runtime
             if (o is Variable) env.Set(SymbolNumber, (Variable)o); // Link to variable, e.g. in Closure
             else
             {
-                if (env.HasVariable(SymbolNumber) && env.Get(SymbolNumber, Symbol).IsUnassigned())
+                if (env.HasVariable(SymbolNumber))
                     env.Get(SymbolNumber, Symbol).SetValue(o);
                 else
                     env.Set(SymbolNumber, new Variable(o));
@@ -551,6 +551,20 @@ namespace org.lb.lbvm.runtime
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(Nil.GetInstance());
+            ip += Length;
+        }
+    }
+
+    public sealed class RandomStatement : Statement
+    {
+        private static readonly Random random = new Random();
+        internal RandomStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "RANDOM"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o = valueStack.Pop();
+            valueStack.Push(random.Next(Convert.ToInt32(o)));
             ip += Length;
         }
     }

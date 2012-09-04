@@ -41,7 +41,7 @@ namespace org.lb.lbvm
 
             for (var current = Statements[ip]; !(current is runtime.EndStatement); current = Statements[ip])
             {
-                Debug.Print("0x" + ip.ToString("x4") + ": " + current);
+                //Debug.Print("0x" + ip.ToString("x4") + ": " + current);
                 current.Execute(ref ip, valueStack, envStack, callStack);
             }
 

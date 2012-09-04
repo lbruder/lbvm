@@ -24,6 +24,7 @@ namespace Test
                 Measure("Compiler", () => assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text));
                 //textBox1.Text = string.Join("\r\n", assemblerSource);
                 Measure("Assembler", () => program = org.lb.lbvm.Assembler.Assemble(assemblerSource));
+                //MessageBox.Show(program.SymbolTable.Length.ToString());
                 //WriteFile(program);
                 object result = null;
                 Measure("Runtime", () => result = program.Run());

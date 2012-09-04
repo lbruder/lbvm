@@ -233,6 +233,10 @@ Analog ENTER, aber POPpt alle Werte, die "zuviel" an die Funktion uebergeben wur
 und PUSHt diese als "letzten Parameter" auf den Stack. Die letzten <number-of-parameters-to-skip> Parameter werden
 dabei uebersprungen, um weiterhin Closures verwenden zu koennen.
 
+RANDOM
+0x24
+POPpt eine Zahl vom Value-Stack, konvertiert sie nach Int32, und PUSHt eine Zufallszahl zwischen 0 (einschliesslich)
+und der gePOPpten Zahl (ausschliesslich) auf den Value-Stack.
 
 ERROR
 0xff
