@@ -136,17 +136,17 @@
   (iter 1.0))
 
 (define (isprime n)
-  (define (test i)
-    (cond ((&gt;= i n) #t)
+  (define (test i upto)
+    (cond ((&gt;= i upto) #t)
           ((zero? (remainder n i)) #f)
-          (else (test (+ i 2)))))
+          (else (test (+ i 2) upto))))
   (cond ((&lt; n 4) (&gt; n 1))
         ((even? n) #f)
-        (else (test 3))))
+        (else (test 3 (+ 1 (sqrt n))))))
 
 (define (primes upto)
-  (filter isprime (range 1 upto 1)))
+  (filter isprime (range 1 upto)))
 
-(primes 100)</value>
+(primes 10000)</value>
   </data>
 </root>
