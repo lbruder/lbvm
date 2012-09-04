@@ -238,6 +238,20 @@ RANDOM
 POPpt eine Zahl vom Value-Stack, konvertiert sie nach Int32, und PUSHt eine Zufallszahl zwischen 0 (einschliesslich)
 und der gePOPpten Zahl (ausschliesslich) auf den Value-Stack.
 
+OBJEQUAL
+0x25
+POPpt zwei Objekte vom Value-Stack, vergleicht sie und PUSHt true, wenn sie gleich sind, sonst false.
+Gleichheit = Beides der gleiche Integer / Double / Bool, das gleiche Symbol, bei Strings oder Paaren die gleiche
+Stelle im Speicher (entspricht Scheme-eq?)
+
+ISNULL
+0x26
+POPpt ein Objekt vom Value-Stack und PUSHt true, wenn es der Spezielle Wert NIL war, sonst false.
+
+PRINT
+0x27
+PEEKt ein Objekt vom Value-Stack gibt ohne folgendes CR/LF es in menschenlesbarer Form aus.
+
 ERROR
 0xff
 Programmfehler

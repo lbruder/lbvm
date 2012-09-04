@@ -1,21 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 namespace org.lb.lbvm
 {
-    public sealed class Program
+    public sealed class PrintEventArgs : EventArgs
+    {
+        public readonly string Value;
+        public PrintEventArgs(string value)
+        {
+            Value = value;
+        }
+    }
+
+    public interface InputOutputChannel
+    {
+        void Print(string value);
+    }
+
+    public sealed class Program: InputOutputChannel
     {
         public readonly int Version;
         public readonly runtime.Statement[] Statements;
         public readonly byte[] Bytecode;
         public readonly string[] SymbolTable;
 
+        public event EventHandler<PrintEventArgs> OnPrint = delegate { };
+
+        public void Print(string value)
+        {
+            OnPrint(this, new PrintEventArgs(value));
+        }
+
         internal Program(int version, byte[] bytecode, string[] symbolTable)
         {
             Version = version;
-            Statements = BytecodeParser.Parse(bytecode, symbolTable);
+            Statements = BytecodeParser.Parse(bytecode, symbolTable, this);
             Bytecode = bytecode;
             SymbolTable = symbolTable;
         }

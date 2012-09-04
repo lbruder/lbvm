@@ -174,7 +174,8 @@ namespace org.lb.lbvm
             var NullaryOpcodes = new Dictionary<string, byte>{
                 {"END", 0x00}, {"POP", 0x01}, {"NUMEQUAL", 0x05}, {"ADD", 0x06}, {"SUB", 0x07}, {"MUL", 0x08}, {"DIV", 0x09}, {"IDIV", 0x0a},
                 {"RET", 0x0d}, {"IMOD", 0x12}, {"PUSHTRUE", 0x15}, {"PUSHFALSE", 0x16}, {"NUMLT", 0x18}, {"NUMLE", 0x19}, {"NUMGT", 0x1a}, {"NUMGE", 0x1b},
-                {"MAKEPAIR", 0x1e}, {"ISPAIR", 0x1f}, {"PAIR1", 0x20}, {"PAIR2", 0x21}, {"PUSHNIL", 0x22}, {"RANDOM", 0x24}, {"ERROR", 0xff} };
+                {"MAKEPAIR", 0x1e}, {"ISPAIR", 0x1f}, {"PAIR1", 0x20}, {"PAIR2", 0x21}, {"PUSHNIL", 0x22}, {"RANDOM", 0x24},
+                {"OBJEQUAL", 0x25}, {"ISNULL", 0x26}, {"PRINT", 0x27}, {"ERROR", 0xff} };
 
             var UnaryIntOpcodes = new Dictionary<string, byte> { { "PUSHINT", 0x02 }, { "CALL", 0x0e }, { "TAILCALL", 0x0f }, { "MAKECLOSURE", 0x17 } };
             var UnarySymbolOpcodes = new Dictionary<string, byte> { { "DEFINE", 0x03 }, { "PUSHVAR", 0x04 }, { "SET", 0x13 }, { "PUSHSYM", 0x14 }, { "MAKEVAR", 0x1d } };

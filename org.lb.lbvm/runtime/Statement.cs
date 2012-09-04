@@ -569,6 +569,48 @@ namespace org.lb.lbvm.runtime
         }
     }
 
+    public sealed class ObjequalStatement : Statement
+    {
+        internal ObjequalStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "OBJEQUAL"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o1 = valueStack.Pop();
+            object o2 = valueStack.Pop();
+            valueStack.Push(o1 == o2 || o1.Equals(o2));
+            ip += Length;
+        }
+    }
+
+    public sealed class IsnullStatement : Statement
+    {
+        internal IsnullStatement() { }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "ISNULL"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o = valueStack.Pop();
+            valueStack.Push(o is Nil);
+            ip += Length;
+        }
+    }
+
+    public sealed class PrintStatement : Statement
+    {
+        private readonly InputOutputChannel printer;
+        internal PrintStatement(InputOutputChannel printer) { this.printer = printer; }
+        public override int Length { get { return 1; } }
+        protected override string Disassembled { get { return "PRINT"; } }
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object o = valueStack.Peek();
+            if (o is bool) printer.Print(((bool)o) ? "#t" : "#f");
+            else printer.Print(string.Format(CultureInfo.InvariantCulture, "{0}", o));
+            ip += Length;
+        }
+    }
+
     public sealed class ErrorStatement : Statement
     {
         internal ErrorStatement() { }

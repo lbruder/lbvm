@@ -110,5 +110,16 @@ namespace org.lb.lbvm.runtime
         {
             return Name;
         }
+
+        public override bool Equals(object obj)
+        {
+            Symbol other = obj as Symbol;
+            return (other != null && other.Number == this.Number && other.Name == this.Name);
+        }
+
+        public override int GetHashCode()
+        {
+            return Number;
+        }
     }
 }

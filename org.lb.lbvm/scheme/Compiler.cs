@@ -5,14 +5,24 @@ using org.lb.lbvm.Properties;
 
 namespace org.lb.lbvm.scheme
 {
-    // TODO: lambda, quote, begin
-    // TODO: let, or, and / macro system (if macros, then move COND to macro aswell)
+    // TODO:
+    //boolean?
+    //symbol?
+    //char?
+    //vector?
+    //number?
+    //string?
+    //procedure?
+
+    // TODO: lambda, begin
+    // TODO: let, or, and   /   macro system (if macros, then move COND to macro aswell)
 
     public sealed class Compiler
     {
         private readonly List<string> CompiledSource = new List<string>();
         private readonly Symbol defineSymbol = new Symbol("define");
         private readonly Symbol ifSymbol = new Symbol("if");
+        private readonly Symbol quoteSymbol = new Symbol("quote");
         private readonly Symbol elseSymbol = new Symbol("else");
         private readonly Symbol condSymbol = new Symbol("cond");
         private readonly Symbol consSymbol = new Symbol("cons");
@@ -21,6 +31,8 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol cdrSymbol = new Symbol("cdr");
         private readonly Symbol nilSymbol = new Symbol("nil");
         private readonly Symbol numericEqualSymbol = new Symbol("=");
+        private readonly Symbol eqSymbol = new Symbol("eq?");
+        private readonly Symbol nullSymbol = new Symbol("null?");
         private readonly Symbol plusSymbol = new Symbol("+");
         private readonly Symbol minusSymbol = new Symbol("-");
         private readonly Symbol starSymbol = new Symbol("*");
@@ -31,6 +43,7 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol gtSymbol = new Symbol(">");
         private readonly Symbol leSymbol = new Symbol("<=");
         private readonly Symbol geSymbol = new Symbol(">=");
+        private readonly Symbol displaySymbol = new Symbol("display");
         private readonly Symbol randomSymbol = new Symbol("random");
         private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond" };
         private readonly List<Symbol> optimizedFunctionSymbols;
@@ -43,7 +56,8 @@ namespace org.lb.lbvm.scheme
         private Compiler(string source)
         {
             optimizedFunctionSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, imodSymbol, idivSymbol,
-                leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol, randomSymbol};
+                leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol, randomSymbol, eqSymbol, nullSymbol,
+                displaySymbol};
             var readSource = new Reader().ReadAll(source).ToList();
             CompileBlock(readSource, false);
             Emit("END");
@@ -83,6 +97,7 @@ namespace org.lb.lbvm.scheme
             object firstValue = value[0];
 
             if (defineSymbol.Equals(firstValue)) CompileDefine(value);
+            else if (quoteSymbol.Equals(firstValue)) CompileQuote(value);
             else if (ifSymbol.Equals(firstValue)) CompileIf(value, tailCall);
             else if (condSymbol.Equals(firstValue)) CompileCond(value, tailCall);
             else if (numericEqualSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMEQUAL");
@@ -100,7 +115,10 @@ namespace org.lb.lbvm.scheme
             else if (conspSymbol.Equals(firstValue)) CompileUnaryOperation(value, "ISPAIR");
             else if (carSymbol.Equals(firstValue)) CompileUnaryOperation(value, "PAIR1");
             else if (cdrSymbol.Equals(firstValue)) CompileUnaryOperation(value, "PAIR2");
+            else if (displaySymbol.Equals(firstValue)) CompileUnaryOperation(value, "PRINT");
             else if (randomSymbol.Equals(firstValue)) CompileUnaryOperation(value, "RANDOM");
+            else if (eqSymbol.Equals(firstValue)) CompileBinaryOperation(value, "OBJEQUAL");
+            else if (nullSymbol.Equals(firstValue)) CompileUnaryOperation(value, "ISNULL");
             else CompileFunctionCall(value, tailCall);
         }
 
@@ -172,7 +190,8 @@ namespace org.lb.lbvm.scheme
             if (o is List<object>)
             {
                 var list = (List<object>)o;
-                if (list.Count > 1 && defineSymbol.Equals(list[0]) && list[1] is List<object>) // define function
+                if (list.Count == 0) return;
+                if (defineSymbol.Equals(list[0]) && list[1] is List<object>) // define function
                 {
                     string name = ((Symbol)((List<object>)list[1])[0]).Name;
                     definedVariables.Add(name);
@@ -180,6 +199,10 @@ namespace org.lb.lbvm.scheme
                     AssertAllFunctionParametersAreSymbols(parameters);
                     foreach (var i in FindFreeVariablesInLambda(parameters.Select(i => ((Symbol)i).Name), list.Skip(2), new HashSet<string>()))
                         if (!definedVariables.Contains(i)) accessedVariables.Add(i);
+                }
+                else if (quoteSymbol.Equals(list[0]))
+                {
+                    // Ignore quoted stuff
                 }
                 else // Function call TODO: Lambdas, simple DEFINEs
                 {
@@ -206,6 +229,31 @@ namespace org.lb.lbvm.scheme
             throw new CompilerException("Compiling VARDEFs not implemented yet");
         }
 
+        private void CompileQuote(List<object> value)
+        {
+            AssertParameterCount(1, value.Count - 1, "quote");
+            CompileQuotedValue(value[1]);
+        }
+
+        private void CompileQuotedValue(object o)
+        {
+            if (o is bool) Emit((bool)o ? "PUSHTRUE" : "PUSHFALSE");
+            else if (o is int) Emit("PUSHINT " + (int)o);
+            else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
+            else if (o is string) Emit("PUSHSTR \"" + EscapeString((string)o) + "\"");
+            else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
+            else if (o is Symbol) Emit("PUSHSYM " + ((Symbol)o).Name);
+            else if (o is List<object>) CompileQuotedList((List<object>)o);
+            else throw new CompilerException("TODO: Quoting " + o.GetType());
+        }
+
+        private void CompileQuotedList(List<object> value)
+        {
+            Emit("PUSHVAR list");
+            foreach (object o in value) CompileQuotedValue(o);
+            Emit("CALL " + value.Count);
+        }
+
         private void CompileIf(List<object> value, bool tailCall)
         {
             CompileStatement(value[1], false);
@@ -221,7 +269,7 @@ namespace org.lb.lbvm.scheme
 
         private void AssertParameterCount(int expected, int got, string function)
         {
-            if (expected != got) throw new CompilerException(function + ": Expected " + expected + " parameters, got " + got);
+            if (expected != got) throw new CompilerException(function + ": Expected " + expected + " parameter(s), got " + got);
         }
 
         private int nextGeneratedLabelNumber;

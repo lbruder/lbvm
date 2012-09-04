@@ -7,19 +7,21 @@ namespace org.lb.lbvm
     {
         private readonly string[] symbolTable;
         private readonly byte[] bytecode;
+        private readonly InputOutputChannel printer;
         private int offset;
         private readonly List<runtime.Statement> statements = new List<runtime.Statement>();
 
-        private BytecodeParser(byte[] bytecode, string[] symbolTable)
+        private BytecodeParser(byte[] bytecode, string[] symbolTable, InputOutputChannel printer)
         {
             this.bytecode = bytecode;
             this.symbolTable = symbolTable;
+            this.printer = printer;
             this.offset = 0;
         }
 
-        internal static runtime.Statement[] Parse(byte[] bytecode, string[] symbolTable)
+        internal static runtime.Statement[] Parse(byte[] bytecode, string[] symbolTable, InputOutputChannel printer)
         {
-            return new BytecodeParser(bytecode, symbolTable).ParseStatements();
+            return new BytecodeParser(bytecode, symbolTable, printer).ParseStatements();
         }
 
         private runtime.Statement[] ParseStatements()
@@ -78,6 +80,9 @@ namespace org.lb.lbvm
                 case 0x22: statements.Add(new runtime.PushnilStatement()); return;
                 case 0x23: statements.Add(new runtime.EnterRestStatement(ReadInt(), ReadInt(), GetSymbolTableEntry(ReadInt()))); return;
                 case 0x24: statements.Add(new runtime.RandomStatement()); return;
+                case 0x25: statements.Add(new runtime.ObjequalStatement()); return;
+                case 0x26: statements.Add(new runtime.IsnullStatement()); return;
+                case 0x27: statements.Add(new runtime.PrintStatement(printer)); return;
                 default: throw new InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
         }

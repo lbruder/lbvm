@@ -22,18 +22,32 @@ namespace Test
                 string[] assemblerSource = null;
                 org.lb.lbvm.Program program = null;
                 Measure("Compiler", () => assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text));
-                //textBox1.Text = string.Join("\r\n", assemblerSource);
                 Measure("Assembler", () => program = org.lb.lbvm.Assembler.Assemble(assemblerSource));
-                //MessageBox.Show(program.SymbolTable.Length.ToString());
+                Print(string.Join("\r\n", assemblerSource));
+                program.OnPrint += (s, ev) => Display(ev.Value);
                 //WriteFile(program);
                 object result = null;
                 Measure("Runtime", () => result = program.Run());
-                textBox1.Text += "\r\n" + result + "\r\n" + result.GetType();
+                Print("");
+                Print(result.ToString());
+                Print(result.GetType().ToString());
             }
             catch (Exception ex)
             {
-                textBox1.Text += "\r\n" + ex.Message;
+                Print(ex.Message);
             }
+        }
+
+        private void Print(string value)
+        {
+            Display(value + "\r\n");
+        }
+
+        private void Display(string value)
+        {
+            textBox1.Text += value;
+            textBox1.Select(textBox1.Text.Length - 1, 0);
+            textBox1.ScrollToCaret();
         }
 
         private void Measure(string name, Action f)
@@ -42,7 +56,7 @@ namespace Test
             sw.Start();
             f();
             sw.Stop();
-            textBox1.Text += name + ": " + sw.Elapsed + "\r\n";
+            Print(name + ": " + sw.Elapsed);
         }
 
         private static void WriteFile(org.lb.lbvm.Program program)
@@ -67,7 +81,7 @@ namespace Test
                 t += string.Format("0x{0:x4}: {1}\r\n", offset, s);
                 offset += s.Length;
             }
-            textBox1.Text = t;
+            Print(t);
         }
 
         private void textBox2_KeyUp(object sender, KeyEventArgs e)
