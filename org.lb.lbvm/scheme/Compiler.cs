@@ -70,7 +70,7 @@ namespace org.lb.lbvm.scheme
             if (o is bool) Emit((bool)o ? "PUSHTRUE" : "PUSHFALSE");
             else if (o is int) Emit("PUSHINT " + (int)o);
             else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
-            else if (o is string) Emit("PUSHSTR \"" + EscapeString((string)o) + "\"");
+            else if (o is string) Emit("PUSHSTR \"" + Assembler.EscapeString((string)o) + "\"");
             else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
             else if (o is Symbol) Emit("PUSHVAR " + ((Symbol)o).Name);
             else if (o is List<object>) CompileList((List<object>)o, tailCall);
@@ -81,16 +81,6 @@ namespace org.lb.lbvm.scheme
         {
             CompiledSource.Add(line);
             //System.Diagnostics.Debug.Print("EMIT   " + line);
-        }
-
-        private static string EscapeString(string value)
-        {
-            return value
-                .Replace("\\", "\\\\")
-                .Replace("\"", "\\\"")
-                .Replace("\n", "\\n")
-                .Replace("\r", "\\r")
-                .Replace("\t", "\\t");
         }
 
         private void CompileList(List<object> value, bool tailCall)
@@ -246,7 +236,7 @@ namespace org.lb.lbvm.scheme
             if (o is bool) Emit((bool)o ? "PUSHTRUE" : "PUSHFALSE");
             else if (o is int) Emit("PUSHINT " + (int)o);
             else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
-            else if (o is string) Emit("PUSHSTR \"" + EscapeString((string)o) + "\"");
+            else if (o is string) Emit("PUSHSTR \"" + Assembler.EscapeString((string)o) + "\"");
             else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
             else if (o is Symbol) Emit("PUSHSYM " + ((Symbol)o).Name);
             else if (o is List<object>) CompileQuotedList((List<object>)o);

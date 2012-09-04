@@ -512,6 +512,17 @@ namespace org.lb.lbvm.runtime
         }
     }
 
+    public sealed class PushstrStatement : Statement
+    {
+        internal PushstrStatement(string value) : base(5+value.Length, "PUSHSTR \"" + Assembler.EscapeString(value) + "\"") { this.value = value; }
+        private readonly string value;
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            valueStack.Push(value);
+            ip += Length;
+        }
+    }
+
     public sealed class ErrorStatement : Statement
     {
         internal ErrorStatement() : base(1, "ERROR") { }

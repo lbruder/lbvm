@@ -12,6 +12,8 @@
 (define (random x) (random x))
 (define (eq? a b) (eq? a b))
 (define (null? x) (null? x))
+(define (display x) (display x))
+(define (newline) (display "\n"))
 
 (define (car x) (car x))
 (define (cdr x) (cdr x))

@@ -83,6 +83,7 @@ namespace org.lb.lbvm
                 case 0x25: statements.Add(new runtime.ObjequalStatement()); return;
                 case 0x26: statements.Add(new runtime.IsnullStatement()); return;
                 case 0x27: statements.Add(new runtime.PrintStatement(printer)); return;
+                case 0x28: statements.Add(new runtime.PushstrStatement(ReadString())); return;
                 default: throw new InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
         }
@@ -105,6 +106,15 @@ namespace org.lb.lbvm
             double ret = BitConverter.ToDouble(bytecode, offset);
             offset += 8;
             return ret;
+        }
+
+        private string ReadString()
+        {
+            int length = ReadInt();
+            char[] value = new char[length];
+            Array.Copy(bytecode, offset, value, 0, length);
+            offset += length;
+            return new string(value);
         }
     }
 }

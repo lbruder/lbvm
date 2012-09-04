@@ -72,7 +72,7 @@ namespace org.lb.lbvm
                 return;
             }
 
-            AddStatement(line.Split(' '));
+            AddStatement(SplitLine(line));
         }
 
         private sealed class FunctionStatement
@@ -210,6 +210,7 @@ namespace org.lb.lbvm
                     case "PUSHDBL": AssertParameterCount(parameterCount, 1, opcode); Emit(0x1c); EmitDouble(double.Parse(line[1], NumberStyles.Any, CultureInfo.InvariantCulture)); break;
                     case "ENTER": AssertParameterCount(parameterCount, 2, opcode); Emit(0x0c); EmitInt(int.Parse(line[1])); EmitSymbol(line[2]); break;
                     case "ENTERR": AssertParameterCount(parameterCount, 3, opcode); Emit(0x23); EmitInt(int.Parse(line[1])); EmitInt(int.Parse(line[2])); EmitSymbol(line[3]); break;
+                    case "PUSHSTR": AssertParameterCount(parameterCount, 1, opcode); Emit(0x28); EmitString(line[1]); break;
                     default: throw new AssemblerException("Invalid opcode: " + opcode);
                 }
         }
@@ -246,6 +247,13 @@ namespace org.lb.lbvm
             foreach (byte b in BitConverter.GetBytes(valueAsDouble)) Emit(b);
         }
 
+        private void EmitString(string value)
+        {
+            value = UnescapeString(value);
+            EmitInt(value.Length);
+            foreach (byte b in value) Emit(b);
+        }
+
         private void SetLabelPositions()
         {
             foreach (var wanted in WantedLabels)
@@ -258,6 +266,62 @@ namespace org.lb.lbvm
                     labelTarget /= 256;
                 }
             }
+        }
+
+        public static string EscapeString(string value)
+        {
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\n", "\\n")
+                .Replace("\r", "\\r")
+                .Replace("\t", "\\t");
+        }
+
+        public static string UnescapeString(string value)
+        {
+            return value
+                .Replace("\\\"", "\"")
+                .Replace("\\n", "\n")
+                .Replace("\\r", "\r")
+                .Replace("\\t", "\t")
+                .Replace("\\\\", "\\");
+        }
+
+        private static string[] SplitLine(string line)
+        {
+            List<string> ret = new List<string>();
+            line = line.TrimEnd();
+            while (line != "") ret.Add(GetNextPartOfString(ref line));
+            return ret.ToArray();
+        }
+
+        private static string GetNextPartOfString(ref string line)
+        {
+            line = line.TrimStart();
+            string ret;
+            if (line.StartsWith("\""))
+            {
+                int positionOfQuote = line.IndexOf('"', 1);
+                if (positionOfQuote == -1) throw new AssemblerException("Unterminated string literal");
+                ret = line.Substring(1, positionOfQuote - 1);
+                line = line.Substring(positionOfQuote + 1);
+            }
+            else
+            {
+                int positionOfWhitespace = line.IndexOfAny(" \n\r\t".ToCharArray());
+                if (positionOfWhitespace == -1)
+                {
+                    ret = line;
+                    line = "";
+                }
+                else
+                {
+                    ret = line.Substring(0, positionOfWhitespace);
+                    line = line.Substring(positionOfWhitespace + 1);
+                }
+            }
+            return ret;
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Test
                 org.lb.lbvm.Program program = null;
                 Measure("Compiler", () => assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text));
                 Measure("Assembler", () => program = org.lb.lbvm.Assembler.Assemble(assemblerSource));
-                //Print(string.Join("\r\n", assemblerSource));
+                //Print(string.Join("\n", assemblerSource));
                 program.OnPrint += (s, ev) => Display(ev.Value);
                 //WriteFile(program);
                 object result = null;
@@ -40,12 +40,12 @@ namespace Test
 
         private void Print(string value)
         {
-            Display(value + "\r\n");
+            Display(value + "\n");
         }
 
         private void Display(string value)
         {
-            textBox1.Text += value;
+            textBox1.Text += value.Replace("\r", "").Replace("\n", "\r\n");
             textBox1.Select(textBox1.Text.Length - 1, 0);
             textBox1.ScrollToCaret();
         }
@@ -78,7 +78,7 @@ namespace Test
             while (offset < program.Statements.Length)
             {
                 var s = program.Statements[offset];
-                t += string.Format("0x{0:x4}: {1}\r\n", offset, s);
+                t += string.Format("0x{0:x4}: {1}\n", offset, s);
                 offset += s.Length;
             }
             Print(t);

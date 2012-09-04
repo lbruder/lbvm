@@ -250,7 +250,12 @@ POPpt ein Objekt vom Value-Stack und PUSHt true, wenn es der Spezielle Wert NIL 
 
 PRINT
 0x27
-PEEKt ein Objekt vom Value-Stack gibt ohne folgendes CR/LF es in menschenlesbarer Form aus.
+PEEKt ein Objekt vom Value-Stack und gibt es ohne folgendes CR/LF in menschenlesbarer Form aus.
+Ist das Objekt ein String, der ein \r\n oder \n enthaelt, so wird es plattformspezifisch angepasst.
+
+PUSHSTR <Stringkonstante>
+0x28 (Stringlaenge) (String als ASCII ohne 0x00)
+PUSHt die Stringkonstante auf den Value-Stack.
 
 ERROR
 0xff
