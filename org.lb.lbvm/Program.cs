@@ -18,7 +18,7 @@ namespace org.lb.lbvm
         void Print(string value);
     }
 
-    public sealed class Program: InputOutputChannel
+    public sealed class Program : InputOutputChannel
     {
         public readonly int Version;
         public readonly runtime.Statement[] Statements;
@@ -68,7 +68,8 @@ namespace org.lb.lbvm
             if (envStack.Count == 0) throw new Exception("Bad program: Global environment deleted!");
             if (envStack.Count > 1) throw new Exception("Bad program: Environment stack not cleaned up");
             if (callStack.Count > 1) throw new Exception("Bad program: Call stack not cleaned up");
-            if (valueStack.Count != 1) throw new Exception("Bad program: Value stack not cleaned up");
+            if (valueStack.Count == 0) throw new Exception("Bad program: Value stack empty after running");
+            if (valueStack.Count > 1) throw new Exception("Bad program: Value stack not cleaned up");
 
             return valueStack.Pop();
         }

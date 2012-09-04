@@ -2,31 +2,43 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 
-// ReSharper disable RedundantAssignment
-
 namespace org.lb.lbvm.runtime
 {
     public abstract class Statement
     {
-        public abstract int Length { get; }
-        protected abstract string Disassembled { get; }
+        public readonly int Length;
+        private readonly string Disassembled;
         public override string ToString() { return Disassembled; }
         internal abstract void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack);
+        protected Statement(int length, string disassembled)
+        {
+            Length = length;
+            Disassembled = disassembled;
+        }
+    }
+
+    public abstract class BinaryStatement : Statement
+    {
+        internal BinaryStatement(string opcode) : base(1, opcode) { }
+        protected abstract object operation(object tos, object under_tos);
+        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        {
+            object tos = valueStack.Pop();
+            object under_tos = valueStack.Pop();
+            valueStack.Push(operation(tos, under_tos));
+            ip += Length;
+        }
     }
 
     public sealed class EndStatement : Statement
     {
-        internal EndStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "END"; } }
+        internal EndStatement() : base(1, "END") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack) { }
     }
 
     public sealed class PopStatement : Statement
     {
-        internal PopStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "POP"; } }
+        internal PopStatement() : base(1, "POP") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Pop();
@@ -36,10 +48,8 @@ namespace org.lb.lbvm.runtime
 
     public sealed class PushintStatement : Statement
     {
-        internal PushintStatement(int number) { this.Number = number; }
+        internal PushintStatement(int number) : base(5, "PUSHINT " + number) { this.Number = number; }
         private readonly int Number;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "PUSHINT " + Number; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(Number);
@@ -49,11 +59,9 @@ namespace org.lb.lbvm.runtime
 
     public sealed class DefineStatement : Statement
     {
-        internal DefineStatement(int symbolNumber, string symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
+        internal DefineStatement(int symbolNumber, string symbol) : base(5, "DEFINE " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
         private readonly int SymbolNumber;
         private readonly string Symbol;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "DEFINE " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             object o = valueStack.Pop();
@@ -72,11 +80,9 @@ namespace org.lb.lbvm.runtime
 
     public sealed class PushvarStatement : Statement
     {
-        internal PushvarStatement(int symbolNumber, string symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
+        internal PushvarStatement(int symbolNumber, string symbol) : base(5, "PUSHVAR " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
         private readonly int SymbolNumber;
         private readonly string Symbol;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "PUSHVAR " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(envStack.Peek().Get(SymbolNumber, Symbol).GetValue());
@@ -84,117 +90,80 @@ namespace org.lb.lbvm.runtime
         }
     }
 
-    public sealed class NumeqStatement : Statement
+    public sealed class NumeqStatement : BinaryStatement
     {
-        internal NumeqStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "NUMEQ"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal NumeqStatement() : base("NUMEQ") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o1 == (int)o2);
-            else valueStack.Push(Convert.ToDouble(o1) == Convert.ToDouble(o2));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos == (int)tos;
+            return Convert.ToDouble(under_tos) == Convert.ToDouble(tos);
         }
     }
 
-    public sealed class AddStatement : Statement
+    public sealed class AddStatement : BinaryStatement
     {
-        internal AddStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "ADD"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal AddStatement() : base("ADD") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o1 + (int)o2);
-            else valueStack.Push(Convert.ToDouble(o1) + Convert.ToDouble(o2));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos + (int)tos;
+            return Convert.ToDouble(under_tos) + Convert.ToDouble(tos);
         }
     }
 
-    public sealed class SubStatement : Statement
+    public sealed class SubStatement : BinaryStatement
     {
-        internal SubStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "SUB"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal SubStatement() : base("SUB") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 - (int)o1);
-            else valueStack.Push(Convert.ToDouble(o2) - Convert.ToDouble(o1));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos - (int)tos;
+            return Convert.ToDouble(under_tos) - Convert.ToDouble(tos);
         }
     }
 
-    public sealed class MulStatement : Statement
+    public sealed class MulStatement : BinaryStatement
     {
-        internal MulStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "MUL"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal MulStatement() : base("MUL") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o1 * (int)o2);
-            else valueStack.Push(Convert.ToDouble(o1) * Convert.ToDouble(o2));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos * (int)tos;
+            return Convert.ToDouble(under_tos) * Convert.ToDouble(tos);
         }
     }
 
-    public sealed class DivStatement : Statement
+    public sealed class DivStatement : BinaryStatement
     {
-        internal DivStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "DIV"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal DivStatement() : base("DIV") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 / (int)o1);
-            else valueStack.Push(Convert.ToDouble(o2) / Convert.ToDouble(o1));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos / (int)tos;
+            return Convert.ToDouble(under_tos) / Convert.ToDouble(tos);
         }
     }
 
-    public sealed class IdivStatement : Statement
+    public sealed class IdivStatement : BinaryStatement
     {
-        internal IdivStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "IDIV"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal IdivStatement() : base("IDIV") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 / (int)o1);
-            else valueStack.Push((int)Convert.ToDouble(o2) / (int)Convert.ToDouble(o1));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos / (int)tos;
+            return (int)Convert.ToDouble(under_tos) / (int)Convert.ToDouble(tos);
         }
     }
 
-    public sealed class ImodStatement : Statement
+    public sealed class ImodStatement : BinaryStatement
     {
-        internal ImodStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "IMOD"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal ImodStatement() : base("IMOD") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 % (int)o1);
-            else valueStack.Push((int)Convert.ToDouble(o2) % (int)Convert.ToDouble(o1));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos % (int)tos;
+            return (int)Convert.ToDouble(under_tos) % (int)Convert.ToDouble(tos);
         }
     }
 
     public sealed class BfalseStatement : Statement
     {
-        internal BfalseStatement(int target) { this.Target = target; }
+        internal BfalseStatement(int target) : base(5, "BFALSE 0x" + target.ToString("x4")) { this.Target = target; }
         private readonly int Target;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "BFALSE 0x" + Target.ToString("x4"); } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             object o = valueStack.Pop();
@@ -205,11 +174,9 @@ namespace org.lb.lbvm.runtime
 
     public sealed class EnterStatement : Statement
     {
-        internal EnterStatement(int numberOfParameters, string symbol) { this.NumberOfParameters = numberOfParameters; this.Symbol = symbol; }
+        internal EnterStatement(int numberOfParameters, string symbol) : base(9, "ENTER " + numberOfParameters + " " + symbol) { this.NumberOfParameters = numberOfParameters; this.Symbol = symbol; }
         private readonly int NumberOfParameters;
         private readonly string Symbol;
-        public override int Length { get { return 9; } }
-        protected override string Disassembled { get { return "ENTER " + NumberOfParameters + " " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             if (callStack.Peek().NumberOfParameters != NumberOfParameters)
@@ -221,12 +188,10 @@ namespace org.lb.lbvm.runtime
 
     public sealed class EnterRestStatement : Statement
     {
-        internal EnterRestStatement(int numberOfParameters, int numberOfParametersToSkip, string symbol) { this.NumberOfParameters = numberOfParameters; this.NumberOfParametersToSkip = numberOfParametersToSkip; this.Symbol = symbol; }
+        internal EnterRestStatement(int numberOfParameters, int numberOfParametersToSkip, string symbol) : base(13, "ENTERR " + numberOfParameters + " " + numberOfParametersToSkip + " " + symbol) { this.NumberOfParameters = numberOfParameters; this.NumberOfParametersToSkip = numberOfParametersToSkip; this.Symbol = symbol; }
         private readonly int NumberOfParameters;
         private readonly int NumberOfParametersToSkip;
         private readonly string Symbol;
-        public override int Length { get { return 13; } }
-        protected override string Disassembled { get { return "ENTERR " + NumberOfParameters + " " + NumberOfParametersToSkip + " " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             int provided = callStack.Peek().NumberOfParameters;
@@ -246,24 +211,22 @@ namespace org.lb.lbvm.runtime
         }
     }
 
+    // ReSharper disable RedundantAssignment
     public sealed class RetStatement : Statement
     {
-        internal RetStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "RET"; } }
+        internal RetStatement() : base(1, "RET") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             envStack.Pop();
             ip = callStack.Pop().Ip;
         }
     }
+    // ReSharper restore RedundantAssignment
 
     public sealed class CallStatement : Statement
     {
-        internal CallStatement(int numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
+        internal CallStatement(int numberOfPushedArguments) : base(5, "CALL " + numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
         private readonly int NumberOfPushedArguments;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "CALL " + NumberOfPushedArguments; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
@@ -289,10 +252,8 @@ namespace org.lb.lbvm.runtime
 
     public sealed class TailcallStatement : Statement
     {
-        internal TailcallStatement(int numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
+        internal TailcallStatement(int numberOfPushedArguments) : base(5, "TAILCALL " + numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
         private readonly int NumberOfPushedArguments;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "TAILCALL " + NumberOfPushedArguments; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             envStack.Pop();
@@ -319,24 +280,22 @@ namespace org.lb.lbvm.runtime
         }
     }
 
+    // ReSharper disable RedundantAssignment
     public sealed class JmpStatement : Statement
     {
-        internal JmpStatement(int target) { this.Target = target; }
+        internal JmpStatement(int target) : base(5, "JMP 0x" + target.ToString("x4")) { this.Target = target; }
         private readonly int Target;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "JMP 0x" + Target.ToString("x4"); } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             ip = Target;
         }
     }
+    // ReSharper restore RedundantAssignment
 
     public sealed class PushlabelStatement : Statement
     {
-        internal PushlabelStatement(int number) { this.Number = number; }
+        internal PushlabelStatement(int number) : base(5, "PUSHLABEL 0x" + number.ToString("x4")) { this.Number = number; }
         private readonly int Number;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "PUSHLABEL 0x" + Number.ToString("x4"); } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(new IP(Number));
@@ -346,11 +305,9 @@ namespace org.lb.lbvm.runtime
 
     public sealed class SetStatement : Statement
     {
-        internal SetStatement(int symbolNumber, string symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
+        internal SetStatement(int symbolNumber, string symbol) : base(5, "SET " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
         private readonly int SymbolNumber;
         private readonly string Symbol;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "SET " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             object o = valueStack.Pop();
@@ -361,10 +318,8 @@ namespace org.lb.lbvm.runtime
 
     public sealed class PushsymStatement : Statement
     {
-        internal PushsymStatement(int symbolNumber, string symbol) { this.Symbol = new Symbol(symbolNumber, symbol); }
+        internal PushsymStatement(int symbolNumber, string symbol) : base(5, "PUSHSYM " + symbol) { this.Symbol = new Symbol(symbolNumber, symbol); }
         private readonly Symbol Symbol;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "PUSHSYM " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(Symbol);
@@ -374,10 +329,8 @@ namespace org.lb.lbvm.runtime
 
     public sealed class PushboolStatement : Statement
     {
-        internal PushboolStatement(bool value) { this.Value = value; }
+        internal PushboolStatement(bool value) : base(1, "PUSH" + (value ? "TRUE" : "FALSE")) { this.Value = value; }
         private readonly bool Value;
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "PUSH " + (Value ? "TRUE" : "FALSE"); } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(Value);
@@ -387,10 +340,8 @@ namespace org.lb.lbvm.runtime
 
     public sealed class MakeClosureStatement : Statement
     {
-        internal MakeClosureStatement(int numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
+        internal MakeClosureStatement(int numberOfPushedArguments) : base(5, "MAKECLOSURE " + numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
         private readonly int NumberOfPushedArguments;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "MAKECLOSURE " + NumberOfPushedArguments; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             List<Variable> values = new List<Variable>();
@@ -406,72 +357,50 @@ namespace org.lb.lbvm.runtime
         }
     }
 
-    public sealed class NumltStatement : Statement
+    public sealed class NumltStatement : BinaryStatement
     {
-        internal NumltStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "NUMLT"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal NumltStatement() : base("NUMLT") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 < (int)o1);
-            else valueStack.Push(Convert.ToDouble(o2) < Convert.ToDouble(o1));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos < (int)tos;
+            return Convert.ToDouble(under_tos) < Convert.ToDouble(tos);
         }
     }
 
-    public sealed class NumleStatement : Statement
+    public sealed class NumleStatement : BinaryStatement
     {
-        internal NumleStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "NUMLE"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal NumleStatement() : base("NUMLE") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 <= (int)o1);
-            else valueStack.Push(Convert.ToDouble(o2) <= Convert.ToDouble(o1));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos <= (int)tos;
+            return Convert.ToDouble(under_tos) <= Convert.ToDouble(tos);
         }
     }
 
-    public sealed class NumgtStatement : Statement
+    public sealed class NumgtStatement : BinaryStatement
     {
-        internal NumgtStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "NUMGT"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal NumgtStatement() : base("NUMGT") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 > (int)o1);
-            else valueStack.Push(Convert.ToDouble(o2) > Convert.ToDouble(o1));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos > (int)tos;
+            return Convert.ToDouble(under_tos) > Convert.ToDouble(tos);
         }
     }
 
-    public sealed class NumgeStatement : Statement
+    public sealed class NumgeStatement : BinaryStatement
     {
-        internal NumgeStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "NUMGE"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal NumgeStatement() : base("NUMGE") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            if ((o1 is int) && (o2 is int)) valueStack.Push((int)o2 >= (int)o1);
-            else valueStack.Push(Convert.ToDouble(o2) >= Convert.ToDouble(o1));
-            ip += Length;
+            if ((tos is int) && (under_tos is int)) return (int)under_tos >= (int)tos;
+            return Convert.ToDouble(under_tos) >= Convert.ToDouble(tos);
         }
     }
 
     public sealed class PushdblStatement : Statement
     {
-        internal PushdblStatement(double number) { this.Number = number; }
+        internal PushdblStatement(double number) : base(9, "PUSHDBL " + number.ToString(CultureInfo.InvariantCulture)) { this.Number = number; }
         private readonly double Number;
-        public override int Length { get { return 9; } }
-        protected override string Disassembled { get { return "PUSHDBL " + Number.ToString(CultureInfo.InvariantCulture); } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(Number);
@@ -481,11 +410,8 @@ namespace org.lb.lbvm.runtime
 
     public sealed class MakevarStatement : Statement
     {
-        internal MakevarStatement(int symbolNumber, string symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
+        internal MakevarStatement(int symbolNumber, string symbol) : base(5, "MAKEVAR " + symbol) { this.SymbolNumber = symbolNumber; }
         private readonly int SymbolNumber;
-        private readonly string Symbol;
-        public override int Length { get { return 5; } }
-        protected override string Disassembled { get { return "MAKEVAR " + Symbol; } }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             envStack.Peek().Set(SymbolNumber, new Variable());
@@ -493,25 +419,18 @@ namespace org.lb.lbvm.runtime
         }
     }
 
-    public sealed class MakepairStatement : Statement
+    public sealed class MakepairStatement : BinaryStatement
     {
-        internal MakepairStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "MAKEPAIR"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal MakepairStatement() : base("MAKEPAIR") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            valueStack.Push(new Pair(o2, o1));
-            ip += Length;
+            return new Pair(under_tos, tos);
         }
     }
 
     public sealed class IspairStatement : Statement
     {
-        internal IspairStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "ISPAIR"; } }
+        internal IspairStatement() : base(1, "ISPAIR") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(valueStack.Pop() is Pair);
@@ -521,9 +440,7 @@ namespace org.lb.lbvm.runtime
 
     public sealed class Pair1Statement : Statement
     {
-        internal Pair1Statement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "PAIR1"; } }
+        internal Pair1Statement() : base(1, "PAIR1") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(((Pair)valueStack.Pop()).First);
@@ -533,9 +450,7 @@ namespace org.lb.lbvm.runtime
 
     public sealed class Pair2Statement : Statement
     {
-        internal Pair2Statement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "PAIR2"; } }
+        internal Pair2Statement() : base(1, "PAIR2") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(((Pair)valueStack.Pop()).Second);
@@ -545,9 +460,7 @@ namespace org.lb.lbvm.runtime
 
     public sealed class PushnilStatement : Statement
     {
-        internal PushnilStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "PUSHNIL"; } }
+        internal PushnilStatement() : base(1, "PUSHNIL") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             valueStack.Push(Nil.GetInstance());
@@ -558,9 +471,7 @@ namespace org.lb.lbvm.runtime
     public sealed class RandomStatement : Statement
     {
         private static readonly Random random = new Random();
-        internal RandomStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "RANDOM"; } }
+        internal RandomStatement() : base(1, "RANDOM") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             object o = valueStack.Pop();
@@ -569,29 +480,21 @@ namespace org.lb.lbvm.runtime
         }
     }
 
-    public sealed class ObjequalStatement : Statement
+    public sealed class ObjequalStatement : BinaryStatement
     {
-        internal ObjequalStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "OBJEQUAL"; } }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal ObjequalStatement() : base("OBJEQUAL") { }
+        protected override object operation(object tos, object under_tos)
         {
-            object o1 = valueStack.Pop();
-            object o2 = valueStack.Pop();
-            valueStack.Push(o1 == o2 || o1.Equals(o2));
-            ip += Length;
+            return tos == under_tos || tos.Equals(under_tos);
         }
     }
 
     public sealed class IsnullStatement : Statement
     {
-        internal IsnullStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "ISNULL"; } }
+        internal IsnullStatement() : base(1, "ISNULL") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
-            object o = valueStack.Pop();
-            valueStack.Push(o is Nil);
+            valueStack.Push(valueStack.Pop() is Nil);
             ip += Length;
         }
     }
@@ -599,9 +502,7 @@ namespace org.lb.lbvm.runtime
     public sealed class PrintStatement : Statement
     {
         private readonly InputOutputChannel printer;
-        internal PrintStatement(InputOutputChannel printer) { this.printer = printer; }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "PRINT"; } }
+        internal PrintStatement(InputOutputChannel printer) : base(1, "PRINT") { this.printer = printer; }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             object o = valueStack.Peek();
@@ -613,14 +514,10 @@ namespace org.lb.lbvm.runtime
 
     public sealed class ErrorStatement : Statement
     {
-        internal ErrorStatement() { }
-        public override int Length { get { return 1; } }
-        protected override string Disassembled { get { return "ERROR"; } }
+        internal ErrorStatement() : base(1, "ERROR") { }
         internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
         {
             throw new RuntimeException("Error in program: Jump into the middle of a statement");
         }
     }
 }
-
-// ReSharper restore RedundantAssignment

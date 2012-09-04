@@ -23,7 +23,7 @@ namespace Test
                 org.lb.lbvm.Program program = null;
                 Measure("Compiler", () => assemblerSource = org.lb.lbvm.scheme.Compiler.Compile(textBox2.Text));
                 Measure("Assembler", () => program = org.lb.lbvm.Assembler.Assemble(assemblerSource));
-                Print(string.Join("\r\n", assemblerSource));
+                //Print(string.Join("\r\n", assemblerSource));
                 program.OnPrint += (s, ev) => Display(ev.Value);
                 //WriteFile(program);
                 object result = null;

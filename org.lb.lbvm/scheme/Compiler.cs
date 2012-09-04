@@ -14,6 +14,8 @@ namespace org.lb.lbvm.scheme
     //string?
     //procedure?
 
+    // Conversions number->string, string->symbol etc.
+
     // TODO: lambda, begin
     // TODO: let, or, and   /   macro system (if macros, then move COND to macro aswell)
 
@@ -133,11 +135,6 @@ namespace org.lb.lbvm.scheme
             AssertAllFunctionParametersAreSymbols(functionNameAndParameters);
 
             string name = ((Symbol)functionNameAndParameters[0]).Name;
-            if (name == "lcm")
-            {
-                name = name + "";
-            }
-
             List<string> parameters = functionNameAndParameters.Skip(1).Select(i => ((Symbol)i).Name).ToList();
             bool hasRestParameter = parameters.Any(i => i == ".");
             string restParameter = "";
@@ -200,11 +197,15 @@ namespace org.lb.lbvm.scheme
                     foreach (var i in FindFreeVariablesInLambda(parameters.Select(i => ((Symbol)i).Name), list.Skip(2), new HashSet<string>()))
                         if (!definedVariables.Contains(i)) accessedVariables.Add(i);
                 }
+                else if (defineSymbol.Equals(list[0]) && list[1] is Symbol) // define variable
+                {
+                    definedVariables.Add(((Symbol)list[1]).Name);
+                }
                 else if (quoteSymbol.Equals(list[0]))
                 {
                     // Ignore quoted stuff
                 }
-                else // Function call TODO: Lambdas, simple DEFINEs
+                else // Function call TODO: Lambda
                 {
                     // Special handling for first parameter: +, -, *, /, =...
                     bool first = true;
@@ -226,7 +227,12 @@ namespace org.lb.lbvm.scheme
 
         private void CompileVariableDefinition(List<object> value)
         {
-            throw new CompilerException("Compiling VARDEFs not implemented yet");
+            AssertParameterCount(2, value.Count - 1, "define variable");
+            if (!(value[1] is Symbol)) throw new CompilerException("Target of define is not a symbol");
+            Symbol target = (Symbol)value[1];
+            CompileStatement(value[2], false);
+            Emit("DEFINE " + target.Name);
+            Emit("PUSHVAR " + target.Name);
         }
 
         private void CompileQuote(List<object> value)
