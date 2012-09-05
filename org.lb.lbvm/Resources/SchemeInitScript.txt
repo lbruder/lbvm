@@ -13,10 +13,27 @@
 (define (eq? a b) (eq? a b))
 (define (null? x) (null? x))
 (define (display x) (display x))
-(define (newline) (display "\n"))
-
 (define (car x) (car x))
 (define (cdr x) (cdr x))
+(define (string? x) (string? x))
+(define (number? x) (number? x))
+(define (string=? a b) (string=? a b))
+(define (string>? a b) (string>? a b))
+(define (string<? a b) (string<? a b))
+(define (string-ci=? a b) (string-ci=? a b))
+(define (string-ci>? a b) (string-ci>? a b))
+(define (string-ci<? a b) (string-ci<? a b))
+(define (string-length x) (string-length x))
+(define (substring str start end) (substring str start end))
+(define (string-append a b) (string-append a b))
+(define (quotient a b) (quotient a b))
+
+(define (string>=? a b) (not (string<? a b)))
+(define (string<=? a b) (not (string>? a b)))
+(define (string-ci>=? a b) (not (string-ci<? a b)))
+(define (string-ci<=? a b) (not (string-ci>? a b)))
+
+(define (newline) (display "\n"))
 
 (define (caar x) (car (car x)))
 (define (cadr x) (car (cdr x)))
@@ -32,30 +49,18 @@
 (define (cddar x) (cdr (cdr (car x))))
 (define (cdddr x) (cdr (cdr (cdr x))))
 
-(define (list . lst)
-  lst)
-
-(define (zero? x)
-  (= x 0))
-
-(define (positive? x)
-  (> x 0))
-
-(define (negative? x)
-  (< x 0))
+(define (list . lst) lst)
+(define (zero? x) (= x 0))
+(define (positive? x) (> x 0))
+(define (negative? x) (< x 0))
 
 (define (abs x)
   (if (positive? x)
       x
       (- 0 x)))
 
-(define (quotient a b)
-  (quotient a b))
-
 (define (sys:sign x)
-  (if (>= x 0)
-      1
-      -1))
+  (if (>= x 0) 1 -1))
 
 (define (remainder a b)
   (* (sys:sign a)
@@ -73,9 +78,7 @@
   (= 1 (remainder x 2)))
 
 (define (not x)
-  (if x
-      #f
-      #t))
+  (if x #f #t))
 
 (define (reverse lst)
   (define (iter acc current)

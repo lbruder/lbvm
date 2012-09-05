@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace org.lb.lbvm.runtime
@@ -95,6 +96,13 @@ namespace org.lb.lbvm.runtime
         public override string ToString()
         {
             return Value;
+        }
+
+        public int Compare(object obj, bool ci)
+        {
+            StringObject other = obj as StringObject;
+            if (other == null) return 1;
+            return string.Compare(Value, other.Value, ci ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
         }
 
         // TODO: GetCharAt, SetCharAt (!) etc.

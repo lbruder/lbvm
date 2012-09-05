@@ -11,8 +11,6 @@ namespace org.lb.lbvm.scheme
     //symbol?
     //char?
     //vector?
-    //number?
-    //string?
     //procedure?
 
     // Conversions number->string, string->symbol etc.
@@ -24,6 +22,7 @@ namespace org.lb.lbvm.scheme
     {
         private readonly List<string> CompiledSource = new List<string>();
         private readonly Symbol defineSymbol = new Symbol("define");
+        private readonly Symbol setSymbol = new Symbol("set!");
         private readonly Symbol ifSymbol = new Symbol("if");
         private readonly Symbol quoteSymbol = new Symbol("quote");
         private readonly Symbol elseSymbol = new Symbol("else");
@@ -48,8 +47,21 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol geSymbol = new Symbol(">=");
         private readonly Symbol displaySymbol = new Symbol("display");
         private readonly Symbol randomSymbol = new Symbol("random");
-        private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond" };
+        private readonly Symbol numberpSymbol = new Symbol("number?");
+        private readonly Symbol stringpSymbol = new Symbol("string?");
+        private readonly Symbol stringeqSymbol = new Symbol("string=?");
+        private readonly Symbol stringeqciSymbol = new Symbol("string-ci=?");
+        private readonly Symbol stringltSymbol = new Symbol("string<?");
+        private readonly Symbol stringltciSymbol = new Symbol("string-ci<?");
+        private readonly Symbol stringgtSymbol = new Symbol("string>?");
+        private readonly Symbol stringgtciSymbol = new Symbol("string-ci>?");
+        private readonly Symbol stringlengthSymbol = new Symbol("string-length");
+        private readonly Symbol substringSymbol = new Symbol("substring");
+        private readonly Symbol stringappendSymbol = new Symbol("string-append");
+        private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond", "set!" };
         private readonly List<Symbol> optimizedFunctionSymbols;
+        private readonly Dictionary<Symbol, string> unaryFunctions;
+        private readonly Dictionary<Symbol, string> binaryFunctions;
 
         public static string[] Compile(string source)
         {
@@ -60,7 +72,17 @@ namespace org.lb.lbvm.scheme
         {
             optimizedFunctionSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, imodSymbol, idivSymbol,
                 leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol, randomSymbol, eqSymbol, nullSymbol,
-                displaySymbol};
+                numberpSymbol, stringpSymbol, stringeqSymbol, stringeqciSymbol, stringltSymbol, stringltciSymbol, stringgtSymbol, stringgtciSymbol,
+                stringlengthSymbol, substringSymbol, stringappendSymbol, displaySymbol };
+
+            unaryFunctions = new Dictionary<Symbol, string> { { conspSymbol, "ISPAIR" }, { carSymbol, "PAIR1" }, { cdrSymbol, "PAIR2" }, { displaySymbol, "PRINT" },
+                { randomSymbol, "RANDOM" }, { nullSymbol, "ISNULL" },  { numberpSymbol, "ISNUMBER" }, { stringpSymbol, "ISSTRING" }, { stringlengthSymbol, "STRLEN" }};
+
+            binaryFunctions = new Dictionary<Symbol, string> { { numericEqualSymbol, "NUMEQUAL" }, { plusSymbol, "ADD" }, { minusSymbol, "SUB" }, { starSymbol, "MUL" },
+                { slashSymbol, "DIV" }, { imodSymbol, "IMOD" }, { idivSymbol, "IDIV" }, { ltSymbol, "NUMLT" }, { leSymbol, "NUMLE" }, { gtSymbol, "NUMGT" }, { geSymbol, "NUMGE" },
+                { consSymbol, "MAKEPAIR" }, { eqSymbol, "OBJEQUAL" }, { stringeqSymbol, "STREQUAL" }, { stringeqciSymbol, "STREQUALCI" }, { stringltSymbol, "STRLT" },
+                { stringltciSymbol, "STRLTCI" }, { stringgtSymbol, "STRGT" }, { stringgtciSymbol, "STRGTCI" }, { stringappendSymbol, "STRAPPEND" } };
+
             var readSource = new Reader().ReadAll(source).ToList();
             CompileBlock(readSource, false);
             Emit("END");
@@ -89,29 +111,24 @@ namespace org.lb.lbvm.scheme
             if (value.Count == 0) throw new CompilerException("Empty list cannot be called as a function");
             object firstValue = value[0];
 
+            if (firstValue is Symbol && unaryFunctions.ContainsKey((Symbol)firstValue))
+            {
+                CompileUnaryOperation(value, unaryFunctions[(Symbol)firstValue]);
+                return;
+            }
+
+            if (firstValue is Symbol && binaryFunctions.ContainsKey((Symbol)firstValue))
+            {
+                CompileBinaryOperation(value, binaryFunctions[(Symbol)firstValue]);
+                return;
+            }
+
             if (defineSymbol.Equals(firstValue)) CompileDefine(value);
+            else if (setSymbol.Equals(firstValue)) CompileSet(value);
             else if (quoteSymbol.Equals(firstValue)) CompileQuote(value);
             else if (ifSymbol.Equals(firstValue)) CompileIf(value, tailCall);
             else if (condSymbol.Equals(firstValue)) CompileCond(value, tailCall);
-            else if (numericEqualSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMEQUAL");
-            else if (plusSymbol.Equals(firstValue)) CompileBinaryOperation(value, "ADD");
-            else if (minusSymbol.Equals(firstValue)) CompileBinaryOperation(value, "SUB");
-            else if (starSymbol.Equals(firstValue)) CompileBinaryOperation(value, "MUL");
-            else if (slashSymbol.Equals(firstValue)) CompileBinaryOperation(value, "DIV");
-            else if (imodSymbol.Equals(firstValue)) CompileBinaryOperation(value, "IMOD");
-            else if (idivSymbol.Equals(firstValue)) CompileBinaryOperation(value, "IDIV");
-            else if (ltSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMLT");
-            else if (leSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMLE");
-            else if (gtSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMGT");
-            else if (geSymbol.Equals(firstValue)) CompileBinaryOperation(value, "NUMGE");
-            else if (consSymbol.Equals(firstValue)) CompileBinaryOperation(value, "MAKEPAIR");
-            else if (conspSymbol.Equals(firstValue)) CompileUnaryOperation(value, "ISPAIR");
-            else if (carSymbol.Equals(firstValue)) CompileUnaryOperation(value, "PAIR1");
-            else if (cdrSymbol.Equals(firstValue)) CompileUnaryOperation(value, "PAIR2");
-            else if (displaySymbol.Equals(firstValue)) CompileUnaryOperation(value, "PRINT");
-            else if (randomSymbol.Equals(firstValue)) CompileUnaryOperation(value, "RANDOM");
-            else if (eqSymbol.Equals(firstValue)) CompileBinaryOperation(value, "OBJEQUAL");
-            else if (nullSymbol.Equals(firstValue)) CompileUnaryOperation(value, "ISNULL");
+            else if (substringSymbol.Equals(firstValue)) CompileSubstring(value);
             else CompileFunctionCall(value, tailCall);
         }
 
@@ -119,6 +136,15 @@ namespace org.lb.lbvm.scheme
         {
             if (value[1] is List<object>) CompileFunctionDefinition(value, (List<object>)value[1], value.Skip(2).ToList());
             else CompileVariableDefinition(value);
+        }
+
+        private void CompileSubstring(List<object> value)
+        {
+            AssertParameterCount(value.Count - 1, 3, "substr");
+            CompileStatement(value[1], false);
+            CompileStatement(value[2], false);
+            CompileStatement(value[3], false);
+            Emit("SUBSTR");
         }
 
         private void CompileFunctionDefinition(IEnumerable<object> value, List<object> functionNameAndParameters, List<object> body)
@@ -223,6 +249,16 @@ namespace org.lb.lbvm.scheme
             Symbol target = (Symbol)value[1];
             CompileStatement(value[2], false);
             Emit("DEFINE " + target.Name);
+            Emit("PUSHVAR " + target.Name);
+        }
+
+        private void CompileSet(List<object> value)
+        {
+            AssertParameterCount(2, value.Count - 1, "set!");
+            if (!(value[1] is Symbol)) throw new CompilerException("Target of set! is not a symbol");
+            Symbol target = (Symbol)value[1];
+            CompileStatement(value[2], false);
+            Emit("SET " + target.Name);
             Emit("PUSHVAR " + target.Name);
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using org.lb.lbvm.runtime;
 
 namespace org.lb.lbvm
@@ -27,7 +28,6 @@ namespace org.lb.lbvm
             LocalDefines
         };
 
-        private readonly IEnumerable<string> SourceLines;
         private readonly List<byte> Bytecode = new List<byte>();
         private readonly List<string> SymbolTable = new List<string>();
         private readonly Program Program;
@@ -41,39 +41,17 @@ namespace org.lb.lbvm
 
         private Assembler(IEnumerable<string> sourceLines)
         {
-            SourceLines = sourceLines;
-            CreateStatements();
+            foreach (string line in sourceLines) ParseLine(line.Trim());
             SetLabelPositions();
             Program = new Program(1, Bytecode.ToArray(), SymbolTable.ToArray());
         }
 
-        private void CreateStatements()
-        {
-            foreach (string line in SourceLines)
-                ParseLine(line.Trim());
-        }
-
         private void ParseLine(string line)
         {
-            if (line.ToUpper().StartsWith("FUNCTION"))
-            {
-                HandleFunction(line.Split());
-                return;
-            }
-
-            if (line.ToUpper().StartsWith("ENDFUNCTION"))
-            {
-                HandleEndFunction(line.Split());
-                return;
-            }
-
-            if (line.EndsWith(":"))
-            {
-                AddLabel(line.TrimEnd(':'));
-                return;
-            }
-
-            AddStatement(SplitLine(line));
+            if (line.ToUpper().StartsWith("FUNCTION")) HandleFunction(line.Split());
+            else if (line.ToUpper().StartsWith("ENDFUNCTION")) HandleEndFunction(line.Split());
+            else if (line.EndsWith(":")) AddLabel(line.TrimEnd(':'));
+            else AddStatement(SplitLine(line));
         }
 
         private sealed class FunctionStatement
@@ -104,19 +82,19 @@ namespace org.lb.lbvm
             List<string> localDefines = new List<string>();
             string restParameter = "";
             Mode mode = Mode.Parameter;
-            for (int i = 2; i < line.Length; ++i)
+            foreach (var operand in line.Skip(2))
             {
-                if (line[i] == "") continue;
-                if (line[i].ToLower() == "&closingover") mode = Mode.ClosingOverVariable;
-                else if (line[i].ToLower() == "&rest") mode = Mode.Rest;
-                else if (line[i].ToLower() == "&localdefines") mode = Mode.LocalDefines;
-                else if (mode == Mode.Parameter) parameters.Add(line[i]);
-                else if (mode == Mode.ClosingOverVariable) closingOverVariables.Add(line[i]);
-                else if (mode == Mode.LocalDefines) localDefines.Add(line[i]);
+                if (operand == "") continue;
+                if (operand.ToLower() == "&closingover") mode = Mode.ClosingOverVariable;
+                else if (operand.ToLower() == "&rest") mode = Mode.Rest;
+                else if (operand.ToLower() == "&localdefines") mode = Mode.LocalDefines;
+                else if (mode == Mode.Parameter) parameters.Add(operand);
+                else if (mode == Mode.ClosingOverVariable) closingOverVariables.Add(operand);
+                else if (mode == Mode.LocalDefines) localDefines.Add(operand);
                 else if (mode == Mode.Rest)
                 {
                     if (restParameter != "") throw new AssemblerException(name + ": Only one rest parameter allowed in function definition");
-                    restParameter = line[i];
+                    restParameter = operand;
                 }
                 else throw new AssemblerException("Internal error 1 in assembler");
             }
@@ -176,7 +154,8 @@ namespace org.lb.lbvm
                 {"END", 0x00}, {"POP", 0x01}, {"NUMEQUAL", 0x05}, {"ADD", 0x06}, {"SUB", 0x07}, {"MUL", 0x08}, {"DIV", 0x09}, {"IDIV", 0x0a},
                 {"RET", 0x0d}, {"IMOD", 0x12}, {"PUSHTRUE", 0x15}, {"PUSHFALSE", 0x16}, {"NUMLT", 0x18}, {"NUMLE", 0x19}, {"NUMGT", 0x1a}, {"NUMGE", 0x1b},
                 {"MAKEPAIR", 0x1e}, {"ISPAIR", 0x1f}, {"PAIR1", 0x20}, {"PAIR2", 0x21}, {"PUSHNIL", 0x22}, {"RANDOM", 0x24},
-                {"OBJEQUAL", 0x25}, {"ISNULL", 0x26}, {"PRINT", 0x27}, {"ERROR", 0xff} };
+                {"OBJEQUAL", 0x25}, {"ISNULL", 0x26}, {"PRINT", 0x27}, {"ISNUMBER", 0x29}, {"ISSTRING", 0x2a}, {"STREQUAL", 0x2b}, {"STREQUALCI", 0x2c},
+                {"STRLT", 0x2d}, {"STRLTCI", 0x2e}, {"STRGT", 0x2f}, {"STRGTCI", 0x30}, {"STRLEN", 0x31}, {"SUBSTR", 0x32}, {"STRAPPEND", 0x33}, {"ERROR", 0xff} };
 
             var UnaryIntOpcodes = new Dictionary<string, byte> { { "PUSHINT", 0x02 }, { "CALL", 0x0e }, { "TAILCALL", 0x0f }, { "MAKECLOSURE", 0x17 } };
             var UnarySymbolOpcodes = new Dictionary<string, byte> { { "DEFINE", 0x03 }, { "PUSHVAR", 0x04 }, { "SET", 0x13 }, { "PUSHSYM", 0x14 }, { "MAKEVAR", 0x1d } };

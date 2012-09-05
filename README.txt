@@ -257,6 +257,51 @@ PUSHSTR <Stringkonstante>
 0x28 (Stringlaenge) (String als ASCII ohne 0x00)
 PUSHt die Stringkonstante auf den Value-Stack.
 
+ISNUMBER
+0x29
+POPpt ein Objekt vom Value-Stack und PUSHt true, wenn es eine Zahl war, sonst false.
+
+ISSTRING
+0x2a
+POPpt ein Objekt vom Value-Stack und PUSHt true, wenn es ein String war, sonst false.
+
+STREQUAL
+0x2b
+Analog NUMEQUAL, aber fuer Strings
+
+STREQUALCI
+0x2c
+Analog STREQUAL, aber ohne Unterscheidung von Gross-/Kleinschreibung
+
+STRLT
+0x2d
+Analog NUMLT, aber fuer Strings
+
+STRLTCI
+0x2e
+Analog STRLT, aber ohne Unterscheidung von Gross-/Kleinschreibung
+
+STRGT
+0x2f
+Analog NUMGT, aber fuer Strings
+
+STRGTCI
+0x30
+Analog STRGT, aber ohne Unterscheidung von Gross-/Kleinschreibung
+
+STRLEN
+0x31
+POPpt einen String vom Value-Stack und PUSHt dessen Laenge zurueck.
+
+SUBSTR
+0x32
+POPpt die Werte "end" (TOS), "start" und "str" nacheinander vom Value-Stack und PUSHt
+einen String zurueck, der alle Zeichen aus "str" von "start" bis VOR "end" enthaelt.
+
+STRAPPEND
+0x33
+POPpt zwei Strings vom Value-Stack, haengt sie aneinander und PUSHt das Ergebnis zurueck.
+
 ERROR
 0xff
 Programmfehler

@@ -91,7 +91,7 @@ namespace org.lb.lbvm.runtime
 
     public sealed class NumeqStatement : BinaryStatement
     {
-        internal NumeqStatement() : base("NUMEQ") { }
+        internal NumeqStatement() : base("NUMEQUAL") { }
         protected override object operation(object tos, object under_tos)
         {
             if ((tos is int) && (under_tos is int)) return (int)under_tos == (int)tos;
@@ -511,12 +511,99 @@ namespace org.lb.lbvm.runtime
 
     public sealed class PushstrStatement : Statement
     {
-        internal PushstrStatement(string value) : base(5+value.Length, "PUSHSTR \"" + StringObject.Escape(value) + "\"") { this.value = new StringObject(value); }
+        internal PushstrStatement(string value) : base(5 + value.Length, "PUSHSTR \"" + StringObject.Escape(value) + "\"") { this.value = new StringObject(value); }
         private readonly StringObject value;
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(value);
             ip += Length;
+        }
+    }
+
+    public sealed class IsnumberStatement : Statement
+    {
+        internal IsnumberStatement() : base(1, "ISNUMBER") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            object o = valueStack.Pop();
+            valueStack.Push(o is int || o is double);
+            ip += Length;
+        }
+    }
+
+    public sealed class IsstringStatement : Statement
+    {
+        internal IsstringStatement() : base(1, "ISSTRING") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            valueStack.Push(valueStack.Pop() is StringObject);
+            ip += Length;
+        }
+    }
+
+    public sealed class StreqStatement : BinaryStatement
+    {
+        private readonly bool ci;
+        internal StreqStatement(bool ci) : base("STREQUAL" + (ci ? "CI" : "")) { this.ci = ci; }
+        protected override object operation(object tos, object under_tos)
+        {
+            if ((tos is StringObject) && (under_tos is StringObject)) return ((StringObject)under_tos).Compare(tos, ci) == 0;
+            throw new RuntimeException(this + ": Expected two strings as arguments");
+        }
+    }
+
+    public sealed class StrltStatement : BinaryStatement
+    {
+        private readonly bool ci;
+        internal StrltStatement(bool ci) : base("STRLT" + (ci ? "CI" : "")) { this.ci = ci; }
+        protected override object operation(object tos, object under_tos)
+        {
+            if ((tos is StringObject) && (under_tos is StringObject)) return ((StringObject)under_tos).Compare(tos, ci) < 0;
+            throw new RuntimeException(this + ": Expected two strings as arguments");
+        }
+    }
+
+    public sealed class StrgtStatement : BinaryStatement
+    {
+        private readonly bool ci;
+        internal StrgtStatement(bool ci) : base("STRGT" + (ci ? "CI" : "")) { this.ci = ci; }
+        protected override object operation(object tos, object under_tos)
+        {
+            if ((tos is StringObject) && (under_tos is StringObject)) return ((StringObject)under_tos).Compare(tos, ci) > 0;
+            throw new RuntimeException(this + ": Expected two strings as arguments");
+        }
+    }
+
+    public sealed class StrlengthStatement : Statement
+    {
+        internal StrlengthStatement() : base(1, "STRLEN") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            valueStack.Push(((StringObject)valueStack.Pop()).Value.Length);
+            ip += Length;
+        }
+    }
+
+    public sealed class SubstrStatement : Statement
+    {
+        internal SubstrStatement() : base(1, "SUBSTR") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            int end = (int)valueStack.Pop();
+            int start = (int)valueStack.Pop();
+            StringObject str = (StringObject)valueStack.Pop();
+            valueStack.Push(new StringObject(str.Value.Substring(start, end-start)));
+            ip += Length;
+        }
+    }
+
+    public sealed class StrappendStatement : BinaryStatement
+    {
+        internal StrappendStatement() : base("STRAPPEND") { }
+        protected override object operation(object tos, object under_tos)
+        {
+            if ((tos is StringObject) && (under_tos is StringObject)) return ((StringObject)under_tos).Value + ((StringObject)tos).Value;
+            throw new RuntimeException(this + ": Expected two strings as arguments");
         }
     }
 
