@@ -53,11 +53,11 @@ namespace org.lb.lbvm
         public object Run()
         {
             int ip = 0;
-            var valueStack = new Stack<object>();
-            var envStack = new Stack<runtime.Environment>();
-            var callStack = new Stack<runtime.Call>();
+            var valueStack = new runtime.ValueStack();
+            var envStack = new runtime.EnvironmentStack();
+            var callStack = new runtime.CallStack();
 
-            envStack.Push(new runtime.Environment()); // Global env
+            envStack.PushNew(); // Global env
 
             for (var current = Statements[ip]; !(current is runtime.EndStatement); current = Statements[ip])
             {
@@ -65,12 +65,11 @@ namespace org.lb.lbvm
                 current.Execute(ref ip, valueStack, envStack, callStack);
             }
 
-            if (envStack.Count == 0) throw new Exception("Bad program: Global environment deleted!");
-            if (envStack.Count > 1) throw new Exception("Bad program: Environment stack not cleaned up");
-            if (callStack.Count > 1) throw new Exception("Bad program: Call stack not cleaned up");
-            if (valueStack.Count == 0) throw new Exception("Bad program: Value stack empty after running");
-            if (valueStack.Count > 1) throw new Exception("Bad program: Value stack not cleaned up");
-
+            if (envStack.Count() == 0) throw new RuntimeException("Bad program: Global environment deleted!");
+            if (envStack.Count() > 1) throw new RuntimeException("Bad program: Environment stack not cleaned up");
+            if (callStack.Count() > 1) throw new RuntimeException("Bad program: Call stack not cleaned up");
+            if (valueStack.Count() == 0) throw new RuntimeException("Bad program: Value stack empty after running");
+            if (valueStack.Count() > 1) throw new RuntimeException("Bad program: Value stack not cleaned up");
             return valueStack.Pop();
         }
     }

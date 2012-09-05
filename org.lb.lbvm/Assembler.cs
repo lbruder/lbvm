@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using org.lb.lbvm.runtime;
 
 namespace org.lb.lbvm
 {
@@ -249,7 +250,7 @@ namespace org.lb.lbvm
 
         private void EmitString(string value)
         {
-            value = UnescapeString(value);
+            value = StringObject.Unescape(value);
             EmitInt(value.Length);
             foreach (byte b in value) Emit(b);
         }
@@ -266,26 +267,6 @@ namespace org.lb.lbvm
                     labelTarget /= 256;
                 }
             }
-        }
-
-        public static string EscapeString(string value)
-        {
-            return value
-                .Replace("\\", "\\\\")
-                .Replace("\"", "\\\"")
-                .Replace("\n", "\\n")
-                .Replace("\r", "\\r")
-                .Replace("\t", "\\t");
-        }
-
-        public static string UnescapeString(string value)
-        {
-            return value
-                .Replace("\\\"", "\"")
-                .Replace("\\n", "\n")
-                .Replace("\\r", "\r")
-                .Replace("\\t", "\t")
-                .Replace("\\\\", "\\");
         }
 
         private static string[] SplitLine(string line)

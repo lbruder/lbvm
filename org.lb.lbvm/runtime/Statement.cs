@@ -9,7 +9,7 @@ namespace org.lb.lbvm.runtime
         public readonly int Length;
         private readonly string Disassembled;
         public override string ToString() { return Disassembled; }
-        internal abstract void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack);
+        internal abstract void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack);
         protected Statement(int length, string disassembled)
         {
             Length = length;
@@ -21,7 +21,7 @@ namespace org.lb.lbvm.runtime
     {
         internal BinaryStatement(string opcode) : base(1, opcode) { }
         protected abstract object operation(object tos, object under_tos);
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             object tos = valueStack.Pop();
             object under_tos = valueStack.Pop();
@@ -33,13 +33,13 @@ namespace org.lb.lbvm.runtime
     public sealed class EndStatement : Statement
     {
         internal EndStatement() : base(1, "END") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack) { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack) { }
     }
 
     public sealed class PopStatement : Statement
     {
         internal PopStatement() : base(1, "POP") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Pop();
             ip += Length;
@@ -50,7 +50,7 @@ namespace org.lb.lbvm.runtime
     {
         internal PushintStatement(int number) : base(5, "PUSHINT " + number) { this.Number = number; }
         private readonly int Number;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(Number);
             ip += Length;
@@ -62,17 +62,16 @@ namespace org.lb.lbvm.runtime
         internal DefineStatement(int symbolNumber, string symbol) : base(5, "DEFINE " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
         private readonly int SymbolNumber;
         private readonly string Symbol;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             object o = valueStack.Pop();
-            var env = envStack.Peek();
-            if (o is Variable) env.Set(SymbolNumber, (Variable)o); // Link to variable, e.g. in Closure
+            if (o is Variable) envStack.Set(SymbolNumber, (Variable)o); // Link to variable, e.g. in Closure
             else
             {
-                if (env.HasVariable(SymbolNumber))
-                    env.Get(SymbolNumber, Symbol).SetValue(o);
+                if (envStack.HasVariable(SymbolNumber))
+                    envStack.Get(SymbolNumber, Symbol).SetValue(o);
                 else
-                    env.Set(SymbolNumber, new Variable(o));
+                    envStack.Set(SymbolNumber, new Variable(o));
             }
             ip += Length;
         }
@@ -83,9 +82,9 @@ namespace org.lb.lbvm.runtime
         internal PushvarStatement(int symbolNumber, string symbol) : base(5, "PUSHVAR " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
         private readonly int SymbolNumber;
         private readonly string Symbol;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
-            valueStack.Push(envStack.Peek().Get(SymbolNumber, Symbol).GetValue());
+            valueStack.Push(envStack.Get(SymbolNumber, Symbol).GetValue());
             ip += Length;
         }
     }
@@ -164,7 +163,7 @@ namespace org.lb.lbvm.runtime
     {
         internal BfalseStatement(int target) : base(5, "BFALSE 0x" + target.ToString("x4")) { this.Target = target; }
         private readonly int Target;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             object o = valueStack.Pop();
             if (o is bool && (bool)o == false) ip = Target;
@@ -177,11 +176,11 @@ namespace org.lb.lbvm.runtime
         internal EnterStatement(int numberOfParameters, string symbol) : base(9, "ENTER " + numberOfParameters + " " + symbol) { this.NumberOfParameters = numberOfParameters; this.Symbol = symbol; }
         private readonly int NumberOfParameters;
         private readonly string Symbol;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
-            if (callStack.Peek().NumberOfParameters != NumberOfParameters)
+            if (callStack.GetLastNumberOfParameters() != NumberOfParameters)
                 throw new RuntimeException(Symbol + ": Invalid parameter count");
-            envStack.Push(new Environment());
+            envStack.PushNew();
             ip += Length;
         }
     }
@@ -192,21 +191,21 @@ namespace org.lb.lbvm.runtime
         private readonly int NumberOfParameters;
         private readonly int NumberOfParametersToSkip;
         private readonly string Symbol;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        private readonly ValueStack skipStack = new ValueStack();
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
-            int provided = callStack.Peek().NumberOfParameters;
+            int provided = callStack.GetLastNumberOfParameters();
             if (provided < NumberOfParameters - 1) // -1 as there may be an empty list as rest parameter
                 throw new RuntimeException(Symbol + ": Invalid parameter count");
 
             object restParameter = Nil.GetInstance();
-            var skipStack = new Stack<object>();
             for (int i = 0; i < NumberOfParametersToSkip; ++i) skipStack.Push(valueStack.Pop());
             int numberOfValuesForRestParameter = 1 + provided - NumberOfParameters;
             for (int i = 0; i < numberOfValuesForRestParameter; ++i) restParameter = new Pair(valueStack.Pop(), restParameter);
             valueStack.Push(restParameter);
             for (int i = 0; i < NumberOfParametersToSkip; ++i) valueStack.Push(skipStack.Pop());
 
-            envStack.Push(new Environment());
+            envStack.PushNew();
             ip += Length;
         }
     }
@@ -215,10 +214,11 @@ namespace org.lb.lbvm.runtime
     public sealed class RetStatement : Statement
     {
         internal RetStatement() : base(1, "RET") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             envStack.Pop();
-            ip = callStack.Pop().Ip;
+            ip = callStack.GetLastIp();
+            callStack.Pop();
         }
     }
     // ReSharper restore RedundantAssignment
@@ -227,14 +227,12 @@ namespace org.lb.lbvm.runtime
     {
         internal CallStatement(int numberOfPushedArguments) : base(5, "CALL " + numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
         private readonly int NumberOfPushedArguments;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
-            // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
-            var vs = valueStack.ToArray();
-            object target = vs[NumberOfPushedArguments];
+            object target = valueStack.GetFromTop(NumberOfPushedArguments);
             if (target is IP)
             {
-                callStack.Push(new Call(ip + Length, NumberOfPushedArguments));
+                callStack.Push(ip + Length, NumberOfPushedArguments);
                 ip = ((IP)target).Value;
                 return;
             }
@@ -242,7 +240,7 @@ namespace org.lb.lbvm.runtime
             {
                 Closure c = (Closure)target;
                 foreach (var value in c.ClosedOverValues) valueStack.Push(value);
-                callStack.Push(new Call(ip + Length, NumberOfPushedArguments + c.ClosedOverValues.Count));
+                callStack.Push(ip + Length, NumberOfPushedArguments + c.ClosedOverValues.Count);
                 ip = c.Target;
                 return;
             }
@@ -254,17 +252,16 @@ namespace org.lb.lbvm.runtime
     {
         internal TailcallStatement(int numberOfPushedArguments) : base(5, "TAILCALL " + numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
         private readonly int NumberOfPushedArguments;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             envStack.Pop();
-            int oldIp = callStack.Pop().Ip;
+            int oldIp = callStack.GetLastIp();
+            callStack.Pop();
 
-            // HACK: Jump to valueStack[tos - NumberOfPushedArguments]
-            var vs = valueStack.ToArray();
-            object target = vs[NumberOfPushedArguments];
+            object target = valueStack.GetFromTop(NumberOfPushedArguments);
             if (target is IP)
             {
-                callStack.Push(new Call(oldIp, NumberOfPushedArguments));
+                callStack.Push(oldIp, NumberOfPushedArguments);
                 ip = ((IP)target).Value;
                 return;
             }
@@ -272,7 +269,7 @@ namespace org.lb.lbvm.runtime
             {
                 Closure c = (Closure)target;
                 foreach (var value in c.ClosedOverValues) valueStack.Push(value);
-                callStack.Push(new Call(oldIp, NumberOfPushedArguments + c.ClosedOverValues.Count));
+                callStack.Push(oldIp, NumberOfPushedArguments + c.ClosedOverValues.Count);
                 ip = c.Target;
                 return;
             }
@@ -285,7 +282,7 @@ namespace org.lb.lbvm.runtime
     {
         internal JmpStatement(int target) : base(5, "JMP 0x" + target.ToString("x4")) { this.Target = target; }
         private readonly int Target;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             ip = Target;
         }
@@ -296,7 +293,7 @@ namespace org.lb.lbvm.runtime
     {
         internal PushlabelStatement(int number) : base(5, "PUSHLABEL 0x" + number.ToString("x4")) { this.Number = number; }
         private readonly int Number;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(new IP(Number));
             ip += Length;
@@ -308,10 +305,10 @@ namespace org.lb.lbvm.runtime
         internal SetStatement(int symbolNumber, string symbol) : base(5, "SET " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
         private readonly int SymbolNumber;
         private readonly string Symbol;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             object o = valueStack.Pop();
-            envStack.Peek().Get(SymbolNumber, Symbol).SetValue(o);
+            envStack.Get(SymbolNumber, Symbol).SetValue(o);
             ip += Length;
         }
     }
@@ -320,7 +317,7 @@ namespace org.lb.lbvm.runtime
     {
         internal PushsymStatement(int symbolNumber, string symbol) : base(5, "PUSHSYM " + symbol) { this.Symbol = new Symbol(symbolNumber, symbol); }
         private readonly Symbol Symbol;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(Symbol);
             ip += Length;
@@ -331,7 +328,7 @@ namespace org.lb.lbvm.runtime
     {
         internal PushboolStatement(bool value) : base(1, "PUSH" + (value ? "TRUE" : "FALSE")) { this.Value = value; }
         private readonly bool Value;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(Value);
             ip += Length;
@@ -342,14 +339,14 @@ namespace org.lb.lbvm.runtime
     {
         internal MakeClosureStatement(int numberOfPushedArguments) : base(5, "MAKECLOSURE " + numberOfPushedArguments) { this.NumberOfPushedArguments = numberOfPushedArguments; }
         private readonly int NumberOfPushedArguments;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             List<Variable> values = new List<Variable>();
 
             for (int i = 0; i < NumberOfPushedArguments; ++i)
             {
                 Symbol symbol = (Symbol)valueStack.Pop();
-                values.Add(envStack.Peek().Get(symbol.Number, symbol.Name));
+                values.Add(envStack.Get(symbol.Number, symbol.Name));
             }
             values.Reverse();
             valueStack.Push(new Closure((IP)valueStack.Pop(), values));
@@ -401,7 +398,7 @@ namespace org.lb.lbvm.runtime
     {
         internal PushdblStatement(double number) : base(9, "PUSHDBL " + number.ToString(CultureInfo.InvariantCulture)) { this.Number = number; }
         private readonly double Number;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(Number);
             ip += Length;
@@ -412,9 +409,9 @@ namespace org.lb.lbvm.runtime
     {
         internal MakevarStatement(int symbolNumber, string symbol) : base(5, "MAKEVAR " + symbol) { this.SymbolNumber = symbolNumber; }
         private readonly int SymbolNumber;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
-            envStack.Peek().Set(SymbolNumber, new Variable());
+            envStack.Set(SymbolNumber, new Variable());
             ip += Length;
         }
     }
@@ -431,7 +428,7 @@ namespace org.lb.lbvm.runtime
     public sealed class IspairStatement : Statement
     {
         internal IspairStatement() : base(1, "ISPAIR") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(valueStack.Pop() is Pair);
             ip += Length;
@@ -441,7 +438,7 @@ namespace org.lb.lbvm.runtime
     public sealed class Pair1Statement : Statement
     {
         internal Pair1Statement() : base(1, "PAIR1") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(((Pair)valueStack.Pop()).First);
             ip += Length;
@@ -451,7 +448,7 @@ namespace org.lb.lbvm.runtime
     public sealed class Pair2Statement : Statement
     {
         internal Pair2Statement() : base(1, "PAIR2") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(((Pair)valueStack.Pop()).Second);
             ip += Length;
@@ -461,7 +458,7 @@ namespace org.lb.lbvm.runtime
     public sealed class PushnilStatement : Statement
     {
         internal PushnilStatement() : base(1, "PUSHNIL") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(Nil.GetInstance());
             ip += Length;
@@ -472,7 +469,7 @@ namespace org.lb.lbvm.runtime
     {
         private static readonly Random random = new Random();
         internal RandomStatement() : base(1, "RANDOM") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             object o = valueStack.Pop();
             valueStack.Push(random.Next(Convert.ToInt32(o)));
@@ -492,7 +489,7 @@ namespace org.lb.lbvm.runtime
     public sealed class IsnullStatement : Statement
     {
         internal IsnullStatement() : base(1, "ISNULL") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(valueStack.Pop() is Nil);
             ip += Length;
@@ -503,9 +500,9 @@ namespace org.lb.lbvm.runtime
     {
         private readonly InputOutputChannel printer;
         internal PrintStatement(InputOutputChannel printer) : base(1, "PRINT") { this.printer = printer; }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
-            object o = valueStack.Peek();
+            object o = valueStack.TopOfStack();
             if (o is bool) printer.Print(((bool)o) ? "#t" : "#f");
             else printer.Print(string.Format(CultureInfo.InvariantCulture, "{0}", o));
             ip += Length;
@@ -514,9 +511,9 @@ namespace org.lb.lbvm.runtime
 
     public sealed class PushstrStatement : Statement
     {
-        internal PushstrStatement(string value) : base(5+value.Length, "PUSHSTR \"" + Assembler.EscapeString(value) + "\"") { this.value = value; }
-        private readonly string value;
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal PushstrStatement(string value) : base(5+value.Length, "PUSHSTR \"" + StringObject.Escape(value) + "\"") { this.value = new StringObject(value); }
+        private readonly StringObject value;
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             valueStack.Push(value);
             ip += Length;
@@ -526,7 +523,7 @@ namespace org.lb.lbvm.runtime
     public sealed class ErrorStatement : Statement
     {
         internal ErrorStatement() : base(1, "ERROR") { }
-        internal override void Execute(ref int ip, Stack<object> valueStack, Stack<Environment> envStack, Stack<Call> callStack)
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             throw new RuntimeException("Error in program: Jump into the middle of a statement");
         }

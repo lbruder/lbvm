@@ -3,18 +3,6 @@ using System.Text;
 
 namespace org.lb.lbvm.runtime
 {
-    internal struct Call
-    {
-        public readonly int Ip;
-        public readonly int NumberOfParameters;
-
-        public Call(int ip, int numberOfParameters)
-        {
-            Ip = ip;
-            NumberOfParameters = numberOfParameters;
-        }
-    }
-
     internal sealed class Closure
     {
         public readonly int Target;
@@ -92,6 +80,43 @@ namespace org.lb.lbvm.runtime
             }
             sb.Append(")");
             return sb.ToString();
+        }
+    }
+
+    internal sealed class StringObject
+    {
+        public string Value { get; private set; }
+
+        public StringObject(string value)
+        {
+            Value = value;
+        }
+
+        public override string ToString()
+        {
+            return Value;
+        }
+
+        // TODO: GetCharAt, SetCharAt (!) etc.
+
+        public static string Escape(string value)
+        {
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\n", "\\n")
+                .Replace("\r", "\\r")
+                .Replace("\t", "\\t");
+        }
+
+        public static string Unescape(string value)
+        {
+            return value
+                .Replace("\\\"", "\"")
+                .Replace("\\n", "\n")
+                .Replace("\\r", "\r")
+                .Replace("\\t", "\t")
+                .Replace("\\\\", "\\");
         }
     }
 
