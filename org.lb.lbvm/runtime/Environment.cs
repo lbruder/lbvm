@@ -10,7 +10,7 @@ namespace org.lb.lbvm.runtime
 
         public void PushNew()
         {
-            if (count == stack.Length - 1) throw new RuntimeException("Environment stack overflow");
+            if (count == stack.Length - 1) throw new exceptions.RuntimeException("Environment stack overflow");
             if (stack[count] == null) stack[count] = new Dictionary<Symbol, Variable>();
             else stack[count].Clear();
             count++;
@@ -19,7 +19,7 @@ namespace org.lb.lbvm.runtime
 
         public void Pop()
         {
-            if (count == 0) throw new RuntimeException("Environment stack underflow");
+            if (count == 0) throw new exceptions.RuntimeException("Environment stack underflow");
             count--;
             TOS = stack[count - 1];
         }
@@ -41,7 +41,7 @@ namespace org.lb.lbvm.runtime
 
         public Variable Get(Symbol symbol)
         {
-            if (!HasVariable(symbol)) throw new RuntimeException("Unknown variable '" + symbol + "'");
+            if (!HasVariable(symbol)) throw new exceptions.RuntimeException("Unknown variable '" + symbol + "'");
             return TOS[symbol];
         }
     }

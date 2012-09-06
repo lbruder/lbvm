@@ -7,14 +7,14 @@
 
         public void Push(object obj)
         {
-            if (count == stack.Length - 1) throw new RuntimeException("Value stack overflow");
+            if (count == stack.Length - 1) throw new exceptions.RuntimeException("Value stack overflow");
             stack[count] = obj;
             count++;
         }
 
         public object Pop()
         {
-            if (count == 0) throw new RuntimeException("Value stack underflow");
+            if (count == 0) throw new exceptions.RuntimeException("Value stack underflow");
             return stack[--count];
         }
 
@@ -26,7 +26,7 @@
         public object GetFromTop(int distanceFromTopOfStack)
         {
             int position = count - distanceFromTopOfStack - 1;
-            if (position < 0) throw new RuntimeException("Value stack underflow");
+            if (position < 0) throw new exceptions.RuntimeException("Value stack underflow");
             return stack[position];
         }
 

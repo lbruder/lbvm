@@ -6,7 +6,7 @@ using org.lb.lbvm.runtime;
 
 namespace org.lb.lbvm
 {
-    public sealed class Assembler
+    internal sealed class Assembler
     {
         private sealed class WantedLabel
         {
@@ -73,7 +73,7 @@ namespace org.lb.lbvm
 
         private void HandleFunction(string[] line)
         {
-            if (line.Length < 1) throw new AssemblerException("Syntax error in FUNCTION definition");
+            if (line.Length < 1) throw new exceptions.AssemblerException("Syntax error in FUNCTION definition");
             string name = line[1];
             string labelStart = generateLabel();
             string labelEnd = generateLabel();
@@ -93,10 +93,10 @@ namespace org.lb.lbvm
                 else if (mode == Mode.LocalDefines) localDefines.Add(operand);
                 else if (mode == Mode.Rest)
                 {
-                    if (restParameter != "") throw new AssemblerException(name + ": Only one rest parameter allowed in function definition");
+                    if (restParameter != "") throw new exceptions.AssemblerException(name + ": Only one rest parameter allowed in function definition");
                     restParameter = operand;
                 }
-                else throw new AssemblerException("Internal error 1 in assembler");
+                else throw new exceptions.AssemblerException("Internal error 1 in assembler");
             }
             functionStatements.Push(new FunctionStatement(name, labelStart, labelEnd, closingOverVariables));
             if (restParameter != "") parameters.Add(restParameter);
@@ -141,7 +141,7 @@ namespace org.lb.lbvm
 
         private void AddLabel(string label)
         {
-            if (Labels.ContainsKey(label)) throw new AssemblerException("Label defined twice: " + label);
+            if (Labels.ContainsKey(label)) throw new exceptions.AssemblerException("Label defined twice: " + label);
             Labels[label] = Bytecode.Count;
         }
 
@@ -155,7 +155,9 @@ namespace org.lb.lbvm
                 {"RET", 0x0d}, {"IMOD", 0x12}, {"PUSHTRUE", 0x15}, {"PUSHFALSE", 0x16}, {"NUMLT", 0x18}, {"NUMLE", 0x19}, {"NUMGT", 0x1a}, {"NUMGE", 0x1b},
                 {"MAKEPAIR", 0x1e}, {"ISPAIR", 0x1f}, {"PAIR1", 0x20}, {"PAIR2", 0x21}, {"PUSHNIL", 0x22}, {"RANDOM", 0x24},
                 {"OBJEQUAL", 0x25}, {"ISNULL", 0x26}, {"PRINT", 0x27}, {"ISNUMBER", 0x29}, {"ISSTRING", 0x2a}, {"STREQUAL", 0x2b}, {"STREQUALCI", 0x2c},
-                {"STRLT", 0x2d}, {"STRLTCI", 0x2e}, {"STRGT", 0x2f}, {"STRGTCI", 0x30}, {"STRLEN", 0x31}, {"SUBSTR", 0x32}, {"STRAPPEND", 0x33}, {"ERROR", 0xff} };
+                {"STRLT", 0x2d}, {"STRLTCI", 0x2e}, {"STRGT", 0x2f}, {"STRGTCI", 0x30}, {"STRLEN", 0x31}, {"SUBSTR", 0x32}, {"STRAPPEND", 0x33}, 
+                {"ISCHAR", 0x35}, {"CHREQUAL", 0x36}, {"CHREQUALCI", 0x37}, {"CHRLT", 0x38}, {"CHRLTCI", 0x39}, {"CHRGT", 0x3a}, {"CHRGTCI", 0x3b},
+                {"CHRTOINT", 0x3c}, {"INTTOCHR", 0x3d}, {"STRREF", 0x3e}, {"SETSTRREF", 0x3f}, {"MAKESTR", 0x40}, {"ERROR", 0xff} };
 
             var UnaryIntOpcodes = new Dictionary<string, byte> { { "PUSHINT", 0x02 }, { "CALL", 0x0e }, { "TAILCALL", 0x0f }, { "MAKECLOSURE", 0x17 } };
             var UnarySymbolOpcodes = new Dictionary<string, byte> { { "DEFINE", 0x03 }, { "PUSHVAR", 0x04 }, { "SET", 0x13 }, { "PUSHSYM", 0x14 }, { "MAKEVAR", 0x1d } };
@@ -191,13 +193,14 @@ namespace org.lb.lbvm
                     case "ENTER": AssertParameterCount(parameterCount, 2, opcode); Emit(0x0c); EmitInt(int.Parse(line[1])); EmitSymbol(line[2]); break;
                     case "ENTERR": AssertParameterCount(parameterCount, 3, opcode); Emit(0x23); EmitInt(int.Parse(line[1])); EmitInt(int.Parse(line[2])); EmitSymbol(line[3]); break;
                     case "PUSHSTR": AssertParameterCount(parameterCount, 1, opcode); Emit(0x28); EmitString(line[1]); break;
-                    default: throw new AssemblerException("Invalid opcode: " + opcode);
+                    case "PUSHCHR": AssertParameterCount(parameterCount, 1, opcode); Emit(0x34); EmitInt(int.Parse(line[1])); break;
+                    default: throw new exceptions.AssemblerException("Invalid opcode: " + opcode);
                 }
         }
 
         private void AssertParameterCount(int parameterCount, int wanted, string opcode)
         {
-            if (parameterCount != wanted) throw new AssemblerException("Invalid parameter count in opcode " + opcode);
+            if (parameterCount != wanted) throw new exceptions.AssemblerException("Invalid parameter count in opcode " + opcode);
         }
 
         private void Emit(byte code)
@@ -263,7 +266,7 @@ namespace org.lb.lbvm
             if (line.StartsWith("\""))
             {
                 int positionOfQuote = line.IndexOf('"', 1);
-                if (positionOfQuote == -1) throw new AssemblerException("Unterminated string literal");
+                if (positionOfQuote == -1) throw new exceptions.AssemblerException("Unterminated string literal");
                 ret = line.Substring(1, positionOfQuote - 1);
                 line = line.Substring(positionOfQuote + 1);
             }

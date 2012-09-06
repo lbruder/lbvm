@@ -44,6 +44,7 @@ namespace org.lb.lbvm
             byte opcode = bytecode[offset++];
             switch (opcode)
             {
+                // TODO: Refactor!
                 case 0x00: statements.Add(new runtime.EndStatement()); return;
                 case 0x01: statements.Add(new runtime.PopStatement()); return;
                 case 0x02: statements.Add(new runtime.PushintStatement(ReadInt())); return;
@@ -96,7 +97,20 @@ namespace org.lb.lbvm
                 case 0x31: statements.Add(new runtime.StrlengthStatement()); return;
                 case 0x32: statements.Add(new runtime.SubstrStatement()); return;
                 case 0x33: statements.Add(new runtime.StrappendStatement()); return;
-                default: throw new InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
+                case 0x34: statements.Add(new runtime.PushcharStatement(ReadInt())); return;
+                case 0x35: statements.Add(new runtime.IscharStatement()); return;
+                case 0x36: statements.Add(new runtime.ChreqStatement(false)); return;
+                case 0x37: statements.Add(new runtime.ChreqStatement(true)); return;
+                case 0x38: statements.Add(new runtime.ChrltStatement(false)); return;
+                case 0x39: statements.Add(new runtime.ChrltStatement(true)); return;
+                case 0x3a: statements.Add(new runtime.ChrgtStatement(false)); return;
+                case 0x3b: statements.Add(new runtime.ChrgtStatement(true)); return;
+                case 0x3c: statements.Add(new runtime.ChrtointStatement()); return;
+                case 0x3d: statements.Add(new runtime.InttochrStatement()); return;
+                case 0x3e: statements.Add(new runtime.StrrefStatement()); return;
+                case 0x3f: statements.Add(new runtime.SetstrrefStatement()); return;
+                case 0x40: statements.Add(new runtime.MakestrStatement()); return;
+                default: throw new exceptions.InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
         }
 
@@ -110,7 +124,7 @@ namespace org.lb.lbvm
         private runtime.Symbol GetSymbolTableEntry(int no)
         {
             if (no >= 0 && no < symbolTable.Length) return symbolTable[no];
-            throw new SymbolTableEntryNotFoundException("Symbol table entry not found");
+            throw new exceptions.SymbolTableEntryNotFoundException("Symbol table entry not found");
         }
 
         private double ReadDouble()

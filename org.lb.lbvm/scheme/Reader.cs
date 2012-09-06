@@ -5,7 +5,7 @@ using System.Text;
 
 namespace org.lb.lbvm.scheme
 {
-    public sealed class Reader
+    internal sealed class Reader
     {
         private StringReader expressionReader;
 
@@ -64,10 +64,12 @@ namespace org.lb.lbvm.scheme
                 while (expressionReader.Peek() != -1 && Peek() != ')' && !Char.IsWhiteSpace(Peek())) value += (char)expressionReader.Read();
                 if (value == "space") value = " ";
                 else if (value == "newline") value = "\n";
-                else if (value.Length > 1) throw new ReaderException("Invalid character constant #\\" + value);
-                return value; // TODO: Value[0];
+                else if (value == "cr") value = "\r";
+                else if (value == "tab") value = "\t";
+                else if (value.Length > 1) throw new exceptions.ReaderException("Invalid character constant #\\" + value);
+                return value[0];
             }
-            return ((char)expressionReader.Read()).ToString();
+            return (char)expressionReader.Read();
         }
 
         private object ReadList()
@@ -77,7 +79,7 @@ namespace org.lb.lbvm.scheme
             SkipWhitespace();
             while (Peek() != ')')
             {
-                if (expressionReader.Peek() == -1) throw new ReaderException("Unexpected end of stream in reader");
+                if (expressionReader.Peek() == -1) throw new exceptions.ReaderException("Unexpected end of stream in reader");
                 ret.Add(Read());
                 SkipWhitespace();
             }
@@ -85,7 +87,7 @@ namespace org.lb.lbvm.scheme
             return ret;
         }
 
-        private object ReadSymbol(string prefix="")
+        private object ReadSymbol(string prefix = "")
         {
             string value = prefix;
             value += (char)expressionReader.Read();
@@ -107,7 +109,7 @@ namespace org.lb.lbvm.scheme
             expressionReader.Read(); // Opening quote
             while (Peek() != '"')
             {
-                if (expressionReader.Peek() == -1) throw new ReaderException("Unexpected end of stream in reader");
+                if (expressionReader.Peek() == -1) throw new exceptions.ReaderException("Unexpected end of stream in reader");
                 char c = (char)expressionReader.Read();
                 if (c == '\\')
                 {

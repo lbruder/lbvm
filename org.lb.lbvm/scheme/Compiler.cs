@@ -9,7 +9,6 @@ namespace org.lb.lbvm.scheme
     // TODO:
     //boolean?
     //symbol?
-    //char?
     //vector?
     //procedure?
 
@@ -18,7 +17,7 @@ namespace org.lb.lbvm.scheme
     // TODO: lambda, begin
     // TODO: let, or, and   /   macro system (if macros, then move COND to macro aswell)
 
-    public sealed class Compiler
+    internal sealed class Compiler
     {
         private readonly List<string> CompiledSource = new List<string>();
         private readonly Symbol defineSymbol = Symbol.fromString("define");
@@ -58,12 +57,24 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol stringlengthSymbol = Symbol.fromString("string-length");
         private readonly Symbol substringSymbol = Symbol.fromString("substring");
         private readonly Symbol stringappendSymbol = Symbol.fromString("string-append");
+        private readonly Symbol charpSymbol = Symbol.fromString("char?");
+        private readonly Symbol chareqSymbol = Symbol.fromString("char=?");
+        private readonly Symbol chareqciSymbol = Symbol.fromString("char-ci=?");
+        private readonly Symbol charltSymbol = Symbol.fromString("char<?");
+        private readonly Symbol charltciSymbol = Symbol.fromString("char-ci<?");
+        private readonly Symbol chargtSymbol = Symbol.fromString("char>?");
+        private readonly Symbol chargtciSymbol = Symbol.fromString("char-ci>?");
+        private readonly Symbol chartointSymbol = Symbol.fromString("char->integer");
+        private readonly Symbol inttocharSymbol = Symbol.fromString("integer->char");
+        private readonly Symbol strrefSymbol = Symbol.fromString("string-ref");
+        private readonly Symbol setstrrefSymbol = Symbol.fromString("string-set!");
+        private readonly Symbol makestrSymbol = Symbol.fromString("sys:make-string");
         private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond", "set!" };
         private readonly List<Symbol> optimizedFunctionSymbols;
         private readonly Dictionary<Symbol, string> unaryFunctions;
         private readonly Dictionary<Symbol, string> binaryFunctions;
 
-        public static string[] Compile(string source)
+        public static IEnumerable<string> Compile(string source)
         {
             return new Compiler("(define (##compiler__main##) " + Resources.SchemeInitScript + "\n" + source + ") (##compiler__main##)").CompiledSource.ToArray();
         }
@@ -73,15 +84,19 @@ namespace org.lb.lbvm.scheme
             optimizedFunctionSymbols = new List<Symbol> { numericEqualSymbol, plusSymbol, minusSymbol, starSymbol, slashSymbol, imodSymbol, idivSymbol,
                 leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol, randomSymbol, eqSymbol, nullSymbol,
                 numberpSymbol, stringpSymbol, stringeqSymbol, stringeqciSymbol, stringltSymbol, stringltciSymbol, stringgtSymbol, stringgtciSymbol,
-                stringlengthSymbol, substringSymbol, stringappendSymbol, displaySymbol };
+                stringlengthSymbol, substringSymbol, stringappendSymbol, displaySymbol, charpSymbol, chareqSymbol, chareqciSymbol, charltSymbol,
+                charltciSymbol, chargtSymbol, chargtciSymbol, chartointSymbol, inttocharSymbol, strrefSymbol, setstrrefSymbol, makestrSymbol };
 
             unaryFunctions = new Dictionary<Symbol, string> { { conspSymbol, "ISPAIR" }, { carSymbol, "PAIR1" }, { cdrSymbol, "PAIR2" }, { displaySymbol, "PRINT" },
-                { randomSymbol, "RANDOM" }, { nullSymbol, "ISNULL" },  { numberpSymbol, "ISNUMBER" }, { stringpSymbol, "ISSTRING" }, { stringlengthSymbol, "STRLEN" }};
+                { randomSymbol, "RANDOM" }, { nullSymbol, "ISNULL" },  { numberpSymbol, "ISNUMBER" }, { stringpSymbol, "ISSTRING" }, { stringlengthSymbol, "STRLEN" },
+                { charpSymbol, "ISCHAR" }, { chartointSymbol, "CHRTOINT" }, { inttocharSymbol, "INTTOCHR" }, { makestrSymbol, "MAKESTR" } };
 
             binaryFunctions = new Dictionary<Symbol, string> { { numericEqualSymbol, "NUMEQUAL" }, { plusSymbol, "ADD" }, { minusSymbol, "SUB" }, { starSymbol, "MUL" },
                 { slashSymbol, "DIV" }, { imodSymbol, "IMOD" }, { idivSymbol, "IDIV" }, { ltSymbol, "NUMLT" }, { leSymbol, "NUMLE" }, { gtSymbol, "NUMGT" }, { geSymbol, "NUMGE" },
                 { consSymbol, "MAKEPAIR" }, { eqSymbol, "OBJEQUAL" }, { stringeqSymbol, "STREQUAL" }, { stringeqciSymbol, "STREQUALCI" }, { stringltSymbol, "STRLT" },
-                { stringltciSymbol, "STRLTCI" }, { stringgtSymbol, "STRGT" }, { stringgtciSymbol, "STRGTCI" }, { stringappendSymbol, "STRAPPEND" } };
+                { stringltciSymbol, "STRLTCI" }, { stringgtSymbol, "STRGT" }, { stringgtciSymbol, "STRGTCI" }, { stringappendSymbol, "STRAPPEND" }, { chareqSymbol, "CHREQUAL" },
+                { chareqciSymbol, "CHREQUALCI" }, { charltSymbol, "CHRLT" }, { charltciSymbol, "CHRLTCI" }, { chargtSymbol, "CHRGT" }, { chargtciSymbol, "CHRGTCI" },
+                { strrefSymbol, "STRREF" }};
 
             var readSource = new Reader().ReadAll(source).ToList();
             CompileBlock(readSource, false);
@@ -97,7 +112,8 @@ namespace org.lb.lbvm.scheme
             else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
             else if (o is Symbol) Emit("PUSHVAR " + o);
             else if (o is List<object>) CompileList((List<object>)o, tailCall);
-            else throw new CompilerException("Internal error: I don't know how to compile object of type " + o.GetType());
+            else if (o is char) Emit("PUSHCHR " + (byte)(char)o);
+            else throw new exceptions.CompilerException("Internal error: I don't know how to compile object of type " + o.GetType());
         }
 
         private void Emit(string line)
@@ -108,7 +124,7 @@ namespace org.lb.lbvm.scheme
 
         private void CompileList(List<object> value, bool tailCall)
         {
-            if (value.Count == 0) throw new CompilerException("Empty list cannot be called as a function");
+            if (value.Count == 0) throw new exceptions.CompilerException("Empty list cannot be called as a function");
             object firstValue = value[0];
 
             if (firstValue is Symbol && unaryFunctions.ContainsKey((Symbol)firstValue))
@@ -129,6 +145,7 @@ namespace org.lb.lbvm.scheme
             else if (ifSymbol.Equals(firstValue)) CompileIf(value, tailCall);
             else if (condSymbol.Equals(firstValue)) CompileCond(value, tailCall);
             else if (substringSymbol.Equals(firstValue)) CompileSubstring(value);
+            else if (setstrrefSymbol.Equals(firstValue)) CompileSetStrRef(value);
             else CompileFunctionCall(value, tailCall);
         }
 
@@ -147,6 +164,15 @@ namespace org.lb.lbvm.scheme
             Emit("SUBSTR");
         }
 
+        private void CompileSetStrRef(List<object> value)
+        {
+            AssertParameterCount(value.Count - 1, 3, "string-set!");
+            CompileStatement(value[1], false);
+            CompileStatement(value[2], false);
+            CompileStatement(value[3], false);
+            Emit("SETSTRREF");
+        }
+
         private void CompileFunctionDefinition(IEnumerable<object> value, List<object> functionNameAndParameters, List<object> body)
         {
             AssertAllFunctionParametersAreSymbols(functionNameAndParameters);
@@ -157,7 +183,7 @@ namespace org.lb.lbvm.scheme
             string restParameter = "";
             if (hasRestParameter)
             {
-                if (!(parameters.Count > 1 && parameters[parameters.Count - 2] == ".")) throw new CompilerException(name + ": There may be only one rest parameter in function definition");
+                if (!(parameters.Count > 1 && parameters[parameters.Count - 2] == ".")) throw new exceptions.CompilerException(name + ": There may be only one rest parameter in function definition");
                 restParameter = parameters[parameters.Count - 1];
                 parameters.RemoveRange(parameters.Count - 2, 2);
             }
@@ -186,7 +212,7 @@ namespace org.lb.lbvm.scheme
         private static void AssertAllFunctionParametersAreSymbols(IEnumerable<object> parameters)
         {
             if (!parameters.All(i => i is Symbol))
-                throw new CompilerException("Syntax error in function definition: Not all parameter names are symbols");
+                throw new exceptions.CompilerException("Syntax error in function definition: Not all parameter names are symbols");
         }
 
         // HACK: HashSet parameter is ugly
@@ -207,7 +233,7 @@ namespace org.lb.lbvm.scheme
                 if (list.Count == 0) return;
                 if (defineSymbol.Equals(list[0]) && list[1] is List<object>) // define function
                 {
-                    List<object> nameAndParameters = (List<object>) list[1];
+                    List<object> nameAndParameters = (List<object>)list[1];
                     AssertAllFunctionParametersAreSymbols(nameAndParameters);
                     string name = nameAndParameters[0].ToString();
                     definedVariables.Add(name);
@@ -218,6 +244,7 @@ namespace org.lb.lbvm.scheme
                 else if (defineSymbol.Equals(list[0]) && list[1] is Symbol) // define variable
                 {
                     definedVariables.Add(list[1].ToString());
+                    FindAccessedVariables(list[2], accessedVariables, definedVariables);
                 }
                 else if (quoteSymbol.Equals(list[0]))
                 {
@@ -246,7 +273,7 @@ namespace org.lb.lbvm.scheme
         private void CompileVariableDefinition(List<object> value)
         {
             AssertParameterCount(2, value.Count - 1, "define variable");
-            if (!(value[1] is Symbol)) throw new CompilerException("Target of define is not a symbol");
+            if (!(value[1] is Symbol)) throw new exceptions.CompilerException("Target of define is not a symbol");
             Symbol target = (Symbol)value[1];
             CompileStatement(value[2], false);
             Emit("DEFINE " + target);
@@ -256,7 +283,7 @@ namespace org.lb.lbvm.scheme
         private void CompileSet(List<object> value)
         {
             AssertParameterCount(2, value.Count - 1, "set!");
-            if (!(value[1] is Symbol)) throw new CompilerException("Target of set! is not a symbol");
+            if (!(value[1] is Symbol)) throw new exceptions.CompilerException("Target of set! is not a symbol");
             Symbol target = (Symbol)value[1];
             CompileStatement(value[2], false);
             Emit("SET " + target);
@@ -277,8 +304,9 @@ namespace org.lb.lbvm.scheme
             else if (o is string) Emit("PUSHSTR \"" + StringObject.Escape((string)o) + "\"");
             else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
             else if (o is Symbol) Emit("PUSHSYM " + o);
+            else if (o is char) Emit("PUSHCHR " + (byte)(char)o);
             else if (o is List<object>) CompileQuotedList((List<object>)o);
-            else throw new CompilerException("TODO: Quoting " + o.GetType());
+            else throw new exceptions.CompilerException("TODO: Quoting " + o.GetType());
         }
 
         private void CompileQuotedList(List<object> value)
@@ -303,7 +331,7 @@ namespace org.lb.lbvm.scheme
 
         private void AssertParameterCount(int expected, int got, string function)
         {
-            if (expected != got) throw new CompilerException(function + ": Expected " + expected + " parameter(s), got " + got);
+            if (expected != got) throw new exceptions.CompilerException(function + ": Expected " + expected + " parameter(s), got " + got);
         }
 
         private int nextGeneratedLabelNumber;
@@ -318,9 +346,9 @@ namespace org.lb.lbvm.scheme
             string doneLabel = GenerateLabel();
             foreach (object o in value.Skip(1))
             {
-                if (!(o is List<object>)) throw new CompilerException("Invalid COND form");
+                if (!(o is List<object>)) throw new exceptions.CompilerException("Invalid COND form");
                 var list = (List<object>)o;
-                if (list.Count < 2) throw new CompilerException("Invalid COND form");
+                if (list.Count < 2) throw new exceptions.CompilerException("Invalid COND form");
 
                 if (elseSymbol.Equals(list[0]))
                 {

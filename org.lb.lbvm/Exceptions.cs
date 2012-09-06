@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace org.lb.lbvm
+namespace org.lb.lbvm.exceptions
 {
     public sealed class AssemblerException : Exception
     {

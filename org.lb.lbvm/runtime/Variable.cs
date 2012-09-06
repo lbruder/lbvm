@@ -24,7 +24,7 @@ namespace org.lb.lbvm.runtime
 
         internal object GetValue()
         {
-            if (unassigned) throw new RuntimeException("Read access to unassigned variable");
+            if (unassigned) throw new exceptions.RuntimeException("Read access to unassigned variable");
             return value;
         }
 

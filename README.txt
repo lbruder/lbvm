@@ -302,6 +302,72 @@ STRAPPEND
 0x33
 POPpt zwei Strings vom Value-Stack, haengt sie aneinander und PUSHt das Ergebnis zurueck.
 
+PUSHCHR <Unicode-Zeichen>
+0x34 (Code)
+PUSHt ein 32bit-Unicode-Zeichen auf den Value-Stack.
+
+ISCHAR
+0x35
+POPpt ein Objekt vom Value-Stack und PUSHt true, wenn es ein Zeichen war, sonst false.
+
+CHREQUAL
+0x36
+Analog NUMEQUAL, aber fuer Zeichen
+
+CHREQUALCI
+0x37
+Analog CHREQUAL, aber ohne Unterscheidung von Gross-/Kleinschreibung
+
+CHRLT
+0x38
+Analog NUMLT, aber fuer Zeichen
+
+CHRLTCI
+0x39
+Analog CHRLT, aber ohne Unterscheidung von Gross-/Kleinschreibung
+
+CHRGT
+0x3a
+Analog NUMGT, aber fuer Zeichen
+
+CHRGTCI
+0x3b
+Analog CHRGT, aber ohne Unterscheidung von Gross-/Kleinschreibung
+
+CHRTOINT
+0x3c
+POPpt ein Zeichen vom Value-Stack und PUSHt dessen Unicode-Zahlenwert zurueck.
+
+INTTOCHR
+0x3d
+POPpt einen Zahlenwert vom Value-Stack und PUSHt dessen Unicode-Entsprechung zurueck.
+
+STRREF
+0x3e
+POPpt einen Index (k) und einen String (str) vom Value-Stack und PUSHt das Zeichen str[k] zurueck
+
+SETSTRREF
+0x3f
+POPpt ein Zeichen (c), einen Index (k) und einen String (str) vom Value-Stack, ersetzt str[k] durch c
+und gibt c zurueck
+
+MAKESTR
+0x40
+POPpt eine Zahl vom Value-Stack und PUSHt einen neuen String mit der gewuenschten Laenge zurueck.
+Der Inhalt des Strings ist nicht definiert.
+
 ERROR
 0xff
 Programmfehler
+
+
+
+TODO:
+
+string->number
+number->string
+string->symbol
+symbol->string
+
+Re-write reader in Scheme! :)
+What is needed to re-write the Compiler too?

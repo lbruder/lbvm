@@ -93,6 +93,11 @@ namespace org.lb.lbvm.runtime
             Value = value;
         }
 
+        public StringObject(int numberOfCharacters)
+        {
+            Value = new String(' ', numberOfCharacters);
+        }
+
         public override string ToString()
         {
             return Value;
@@ -105,7 +110,10 @@ namespace org.lb.lbvm.runtime
             return string.Compare(Value, other.Value, ci ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
         }
 
-        // TODO: GetCharAt, SetCharAt (!) etc.
+        public void SetCharAt(int index, char c)
+        {
+            Value = Value.Substring(0, index) + c + Value.Substring(index + 1, Value.Length - index - 1);
+        }
 
         public static string Escape(string value)
         {

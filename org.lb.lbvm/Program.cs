@@ -21,9 +21,9 @@ namespace org.lb.lbvm
     public sealed class Program : InputOutputChannel
     {
         public readonly int Version;
-        public readonly runtime.Statement[] Statements;
-        public readonly byte[] Bytecode;
-        public readonly string[] SymbolTable;
+        private readonly runtime.Statement[] Statements;
+        internal readonly byte[] Bytecode;
+        internal readonly string[] SymbolTable;
 
         public event EventHandler<PrintEventArgs> OnPrint = delegate { };
 
@@ -38,6 +38,16 @@ namespace org.lb.lbvm
             Statements = BytecodeParser.Parse(bytecode, symbolTable, this);
             Bytecode = bytecode;
             SymbolTable = symbolTable;
+        }
+
+        public static Program FromSchemeSource(string source)
+        {
+            return FromAssemblerSource(scheme.Compiler.Compile(source));
+        }
+
+        public static Program FromAssemblerSource(IEnumerable<string> lines)
+        {
+            return Assembler.Assemble(lines);
         }
 
         public static Program FromStream(Stream data)
@@ -65,11 +75,11 @@ namespace org.lb.lbvm
                 current.Execute(ref ip, valueStack, envStack, callStack);
             }
 
-            if (envStack.Count() == 0) throw new RuntimeException("Bad program: Global environment deleted!");
-            if (envStack.Count() > 1) throw new RuntimeException("Bad program: Environment stack not cleaned up");
-            if (callStack.Count() > 1) throw new RuntimeException("Bad program: Call stack not cleaned up");
-            if (valueStack.Count() == 0) throw new RuntimeException("Bad program: Value stack empty after running");
-            if (valueStack.Count() > 1) throw new RuntimeException("Bad program: Value stack not cleaned up");
+            if (envStack.Count() == 0) throw new exceptions.RuntimeException("Bad program: Global environment deleted!");
+            if (envStack.Count() > 1) throw new exceptions.RuntimeException("Bad program: Environment stack not cleaned up");
+            if (callStack.Count() > 1) throw new exceptions.RuntimeException("Bad program: Call stack not cleaned up");
+            if (valueStack.Count() == 0) throw new exceptions.RuntimeException("Bad program: Value stack empty after running");
+            if (valueStack.Count() > 1) throw new exceptions.RuntimeException("Bad program: Value stack not cleaned up");
             return valueStack.Pop();
         }
     }
