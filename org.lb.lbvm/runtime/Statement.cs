@@ -59,19 +59,18 @@ namespace org.lb.lbvm.runtime
 
     public sealed class DefineStatement : Statement
     {
-        internal DefineStatement(int symbolNumber, string symbol) : base(5, "DEFINE " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
-        private readonly int SymbolNumber;
-        private readonly string Symbol;
+        internal DefineStatement(Symbol symbol) : base(5, "DEFINE " + symbol) { this.Symbol = symbol; }
+        private readonly Symbol Symbol;
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             object o = valueStack.Pop();
-            if (o is Variable) envStack.Set(SymbolNumber, (Variable)o); // Link to variable, e.g. in Closure
+            if (o is Variable) envStack.Set(Symbol, (Variable)o); // Link to variable, e.g. in Closure
             else
             {
-                if (envStack.HasVariable(SymbolNumber))
-                    envStack.Get(SymbolNumber, Symbol).SetValue(o);
+                if (envStack.HasVariable(Symbol))
+                    envStack.Get(Symbol).SetValue(o);
                 else
-                    envStack.Set(SymbolNumber, new Variable(o));
+                    envStack.Set(Symbol, new Variable(o));
             }
             ip += Length;
         }
@@ -79,12 +78,11 @@ namespace org.lb.lbvm.runtime
 
     public sealed class PushvarStatement : Statement
     {
-        internal PushvarStatement(int symbolNumber, string symbol) : base(5, "PUSHVAR " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
-        private readonly int SymbolNumber;
-        private readonly string Symbol;
+        internal PushvarStatement(Symbol symbol) : base(5, "PUSHVAR " + symbol) { this.Symbol = symbol; }
+        private readonly Symbol Symbol;
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
-            valueStack.Push(envStack.Get(SymbolNumber, Symbol).GetValue());
+            valueStack.Push(envStack.Get(Symbol).GetValue());
             ip += Length;
         }
     }
@@ -173,9 +171,9 @@ namespace org.lb.lbvm.runtime
 
     public sealed class EnterStatement : Statement
     {
-        internal EnterStatement(int numberOfParameters, string symbol) : base(9, "ENTER " + numberOfParameters + " " + symbol) { this.NumberOfParameters = numberOfParameters; this.Symbol = symbol; }
+        internal EnterStatement(int numberOfParameters, Symbol symbol) : base(9, "ENTER " + numberOfParameters + " " + symbol) { this.NumberOfParameters = numberOfParameters; this.Symbol = symbol; }
         private readonly int NumberOfParameters;
-        private readonly string Symbol;
+        private readonly Symbol Symbol;
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             if (callStack.GetLastNumberOfParameters() != NumberOfParameters)
@@ -187,10 +185,10 @@ namespace org.lb.lbvm.runtime
 
     public sealed class EnterRestStatement : Statement
     {
-        internal EnterRestStatement(int numberOfParameters, int numberOfParametersToSkip, string symbol) : base(13, "ENTERR " + numberOfParameters + " " + numberOfParametersToSkip + " " + symbol) { this.NumberOfParameters = numberOfParameters; this.NumberOfParametersToSkip = numberOfParametersToSkip; this.Symbol = symbol; }
+        internal EnterRestStatement(int numberOfParameters, int numberOfParametersToSkip, Symbol symbol) : base(13, "ENTERR " + numberOfParameters + " " + numberOfParametersToSkip + " " + symbol) { this.NumberOfParameters = numberOfParameters; this.NumberOfParametersToSkip = numberOfParametersToSkip; this.Symbol = symbol; }
         private readonly int NumberOfParameters;
         private readonly int NumberOfParametersToSkip;
-        private readonly string Symbol;
+        private readonly Symbol Symbol;
         private readonly ValueStack skipStack = new ValueStack();
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
@@ -302,20 +300,19 @@ namespace org.lb.lbvm.runtime
 
     public sealed class SetStatement : Statement
     {
-        internal SetStatement(int symbolNumber, string symbol) : base(5, "SET " + symbol) { this.SymbolNumber = symbolNumber; this.Symbol = symbol; }
-        private readonly int SymbolNumber;
-        private readonly string Symbol;
+        internal SetStatement(Symbol symbol) : base(5, "SET " + symbol) { this.Symbol = symbol; }
+        private readonly Symbol Symbol;
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             object o = valueStack.Pop();
-            envStack.Get(SymbolNumber, Symbol).SetValue(o);
+            envStack.Get(Symbol).SetValue(o);
             ip += Length;
         }
     }
 
     public sealed class PushsymStatement : Statement
     {
-        internal PushsymStatement(int symbolNumber, string symbol) : base(5, "PUSHSYM " + symbol) { this.Symbol = new Symbol(symbolNumber, symbol); }
+        internal PushsymStatement(Symbol symbol) : base(5, "PUSHSYM " + symbol) { this.Symbol = symbol; }
         private readonly Symbol Symbol;
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
@@ -346,7 +343,7 @@ namespace org.lb.lbvm.runtime
             for (int i = 0; i < NumberOfPushedArguments; ++i)
             {
                 Symbol symbol = (Symbol)valueStack.Pop();
-                values.Add(envStack.Get(symbol.Number, symbol.Name));
+                values.Add(envStack.Get(symbol));
             }
             values.Reverse();
             valueStack.Push(new Closure((IP)valueStack.Pop(), values));
@@ -407,11 +404,11 @@ namespace org.lb.lbvm.runtime
 
     public sealed class MakevarStatement : Statement
     {
-        internal MakevarStatement(int symbolNumber, string symbol) : base(5, "MAKEVAR " + symbol) { this.SymbolNumber = symbolNumber; }
-        private readonly int SymbolNumber;
+        internal MakevarStatement(Symbol symbol) : base(5, "MAKEVAR " + symbol) { this.Symbol = symbol; }
+        private readonly Symbol Symbol;
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
-            envStack.Set(SymbolNumber, new Variable());
+            envStack.Set(Symbol, new Variable());
             ip += Length;
         }
     }
@@ -602,7 +599,7 @@ namespace org.lb.lbvm.runtime
         internal StrappendStatement() : base("STRAPPEND") { }
         protected override object operation(object tos, object under_tos)
         {
-            if ((tos is StringObject) && (under_tos is StringObject)) return ((StringObject)under_tos).Value + ((StringObject)tos).Value;
+            if ((tos is StringObject) && (under_tos is StringObject)) return new StringObject(((StringObject)under_tos).Value + ((StringObject)tos).Value);
             throw new RuntimeException(this + ": Expected two strings as arguments");
         }
     }

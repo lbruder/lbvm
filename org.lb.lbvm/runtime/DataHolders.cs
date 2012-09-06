@@ -130,13 +130,24 @@ namespace org.lb.lbvm.runtime
 
     internal sealed class Symbol
     {
-        public readonly string Name;
-        public readonly int Number;
+        private readonly string Name;
+        private readonly int hashCode;
 
-        public Symbol(int number, string name)
+        private static readonly Dictionary<string, Symbol> cache = new Dictionary<string, Symbol>();
+
+        public static Symbol fromString(string symbol)
+        {
+            Symbol ret;
+            if (cache.TryGetValue(symbol, out ret)) return ret;
+            ret = new Symbol(symbol);
+            cache[symbol] = ret;
+            return ret;
+        }
+
+        private Symbol(string name)
         {
             Name = name;
-            Number = number;
+            hashCode = name.GetHashCode();
         }
 
         public override string ToString()
@@ -146,13 +157,12 @@ namespace org.lb.lbvm.runtime
 
         public override bool Equals(object obj)
         {
-            Symbol other = obj as Symbol;
-            return (other != null && other.Number == this.Number && other.Name == this.Name);
+            return obj == this;
         }
 
         public override int GetHashCode()
         {
-            return Number;
+            return hashCode;
         }
     }
 }

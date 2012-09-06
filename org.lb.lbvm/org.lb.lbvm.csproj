@@ -51,7 +51,6 @@
     <Compile Include="runtime\ValueStack.cs" />
     <Compile Include="scheme\Compiler.cs" />
     <Compile Include="scheme\Reader.cs" />
-    <Compile Include="scheme\Symbol.cs" />
     <Compile Include="runtime\Statement.cs" />
     <Compile Include="runtime\DataHolders.cs" />
     <Compile Include="runtime\Variable.cs" />

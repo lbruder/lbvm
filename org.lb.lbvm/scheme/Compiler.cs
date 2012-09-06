@@ -21,43 +21,43 @@ namespace org.lb.lbvm.scheme
     public sealed class Compiler
     {
         private readonly List<string> CompiledSource = new List<string>();
-        private readonly Symbol defineSymbol = new Symbol("define");
-        private readonly Symbol setSymbol = new Symbol("set!");
-        private readonly Symbol ifSymbol = new Symbol("if");
-        private readonly Symbol quoteSymbol = new Symbol("quote");
-        private readonly Symbol elseSymbol = new Symbol("else");
-        private readonly Symbol condSymbol = new Symbol("cond");
-        private readonly Symbol consSymbol = new Symbol("cons");
-        private readonly Symbol conspSymbol = new Symbol("pair?");
-        private readonly Symbol carSymbol = new Symbol("car");
-        private readonly Symbol cdrSymbol = new Symbol("cdr");
-        private readonly Symbol nilSymbol = new Symbol("nil");
-        private readonly Symbol numericEqualSymbol = new Symbol("=");
-        private readonly Symbol eqSymbol = new Symbol("eq?");
-        private readonly Symbol nullSymbol = new Symbol("null?");
-        private readonly Symbol plusSymbol = new Symbol("+");
-        private readonly Symbol minusSymbol = new Symbol("-");
-        private readonly Symbol starSymbol = new Symbol("*");
-        private readonly Symbol slashSymbol = new Symbol("/");
-        private readonly Symbol imodSymbol = new Symbol("sys:imod");
-        private readonly Symbol idivSymbol = new Symbol("quotient");
-        private readonly Symbol ltSymbol = new Symbol("<");
-        private readonly Symbol gtSymbol = new Symbol(">");
-        private readonly Symbol leSymbol = new Symbol("<=");
-        private readonly Symbol geSymbol = new Symbol(">=");
-        private readonly Symbol displaySymbol = new Symbol("display");
-        private readonly Symbol randomSymbol = new Symbol("random");
-        private readonly Symbol numberpSymbol = new Symbol("number?");
-        private readonly Symbol stringpSymbol = new Symbol("string?");
-        private readonly Symbol stringeqSymbol = new Symbol("string=?");
-        private readonly Symbol stringeqciSymbol = new Symbol("string-ci=?");
-        private readonly Symbol stringltSymbol = new Symbol("string<?");
-        private readonly Symbol stringltciSymbol = new Symbol("string-ci<?");
-        private readonly Symbol stringgtSymbol = new Symbol("string>?");
-        private readonly Symbol stringgtciSymbol = new Symbol("string-ci>?");
-        private readonly Symbol stringlengthSymbol = new Symbol("string-length");
-        private readonly Symbol substringSymbol = new Symbol("substring");
-        private readonly Symbol stringappendSymbol = new Symbol("string-append");
+        private readonly Symbol defineSymbol = Symbol.fromString("define");
+        private readonly Symbol setSymbol = Symbol.fromString("set!");
+        private readonly Symbol ifSymbol = Symbol.fromString("if");
+        private readonly Symbol quoteSymbol = Symbol.fromString("quote");
+        private readonly Symbol elseSymbol = Symbol.fromString("else");
+        private readonly Symbol condSymbol = Symbol.fromString("cond");
+        private readonly Symbol consSymbol = Symbol.fromString("cons");
+        private readonly Symbol conspSymbol = Symbol.fromString("pair?");
+        private readonly Symbol carSymbol = Symbol.fromString("car");
+        private readonly Symbol cdrSymbol = Symbol.fromString("cdr");
+        private readonly Symbol nilSymbol = Symbol.fromString("nil");
+        private readonly Symbol numericEqualSymbol = Symbol.fromString("=");
+        private readonly Symbol eqSymbol = Symbol.fromString("eq?");
+        private readonly Symbol nullSymbol = Symbol.fromString("null?");
+        private readonly Symbol plusSymbol = Symbol.fromString("+");
+        private readonly Symbol minusSymbol = Symbol.fromString("-");
+        private readonly Symbol starSymbol = Symbol.fromString("*");
+        private readonly Symbol slashSymbol = Symbol.fromString("/");
+        private readonly Symbol imodSymbol = Symbol.fromString("sys:imod");
+        private readonly Symbol idivSymbol = Symbol.fromString("quotient");
+        private readonly Symbol ltSymbol = Symbol.fromString("<");
+        private readonly Symbol gtSymbol = Symbol.fromString(">");
+        private readonly Symbol leSymbol = Symbol.fromString("<=");
+        private readonly Symbol geSymbol = Symbol.fromString(">=");
+        private readonly Symbol displaySymbol = Symbol.fromString("display");
+        private readonly Symbol randomSymbol = Symbol.fromString("random");
+        private readonly Symbol numberpSymbol = Symbol.fromString("number?");
+        private readonly Symbol stringpSymbol = Symbol.fromString("string?");
+        private readonly Symbol stringeqSymbol = Symbol.fromString("string=?");
+        private readonly Symbol stringeqciSymbol = Symbol.fromString("string-ci=?");
+        private readonly Symbol stringltSymbol = Symbol.fromString("string<?");
+        private readonly Symbol stringltciSymbol = Symbol.fromString("string-ci<?");
+        private readonly Symbol stringgtSymbol = Symbol.fromString("string>?");
+        private readonly Symbol stringgtciSymbol = Symbol.fromString("string-ci>?");
+        private readonly Symbol stringlengthSymbol = Symbol.fromString("string-length");
+        private readonly Symbol substringSymbol = Symbol.fromString("substring");
+        private readonly Symbol stringappendSymbol = Symbol.fromString("string-append");
         private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond", "set!" };
         private readonly List<Symbol> optimizedFunctionSymbols;
         private readonly Dictionary<Symbol, string> unaryFunctions;
@@ -95,7 +95,7 @@ namespace org.lb.lbvm.scheme
             else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
             else if (o is string) Emit("PUSHSTR \"" + StringObject.Escape((string)o) + "\"");
             else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
-            else if (o is Symbol) Emit("PUSHVAR " + ((Symbol)o).Name);
+            else if (o is Symbol) Emit("PUSHVAR " + o);
             else if (o is List<object>) CompileList((List<object>)o, tailCall);
             else throw new CompilerException("Internal error: I don't know how to compile object of type " + o.GetType());
         }
@@ -151,8 +151,8 @@ namespace org.lb.lbvm.scheme
         {
             AssertAllFunctionParametersAreSymbols(functionNameAndParameters);
 
-            string name = ((Symbol)functionNameAndParameters[0]).Name;
-            List<string> parameters = functionNameAndParameters.Skip(1).Select(i => ((Symbol)i).Name).ToList();
+            string name = functionNameAndParameters[0].ToString();
+            List<string> parameters = functionNameAndParameters.Skip(1).Select(i => i.ToString()).ToList();
             bool hasRestParameter = parameters.Any(i => i == ".");
             string restParameter = "";
             if (hasRestParameter)
@@ -207,16 +207,17 @@ namespace org.lb.lbvm.scheme
                 if (list.Count == 0) return;
                 if (defineSymbol.Equals(list[0]) && list[1] is List<object>) // define function
                 {
-                    string name = ((Symbol)((List<object>)list[1])[0]).Name;
+                    List<object> nameAndParameters = (List<object>) list[1];
+                    AssertAllFunctionParametersAreSymbols(nameAndParameters);
+                    string name = nameAndParameters[0].ToString();
                     definedVariables.Add(name);
-                    var parameters = ((List<object>)list[1]).Skip(1).ToList();
-                    AssertAllFunctionParametersAreSymbols(parameters);
-                    foreach (var i in FindFreeVariablesInLambda(parameters.Select(i => ((Symbol)i).Name), list.Skip(2), new HashSet<string>()))
+                    var parameters = nameAndParameters.Skip(1).ToList();
+                    foreach (var i in FindFreeVariablesInLambda(parameters.Select(i => i.ToString()), list.Skip(2), new HashSet<string>()))
                         if (!definedVariables.Contains(i)) accessedVariables.Add(i);
                 }
                 else if (defineSymbol.Equals(list[0]) && list[1] is Symbol) // define variable
                 {
-                    definedVariables.Add(((Symbol)list[1]).Name);
+                    definedVariables.Add(list[1].ToString());
                 }
                 else if (quoteSymbol.Equals(list[0]))
                 {
@@ -236,7 +237,7 @@ namespace org.lb.lbvm.scheme
             }
             else if (o is Symbol)
             {
-                string symbol = ((Symbol)o).Name;
+                string symbol = o.ToString();
                 if (!specialFormSymbols.Contains(symbol) && !definedVariables.Contains(symbol))
                     accessedVariables.Add(symbol);
             }
@@ -248,8 +249,8 @@ namespace org.lb.lbvm.scheme
             if (!(value[1] is Symbol)) throw new CompilerException("Target of define is not a symbol");
             Symbol target = (Symbol)value[1];
             CompileStatement(value[2], false);
-            Emit("DEFINE " + target.Name);
-            Emit("PUSHVAR " + target.Name);
+            Emit("DEFINE " + target);
+            Emit("PUSHVAR " + target);
         }
 
         private void CompileSet(List<object> value)
@@ -258,8 +259,8 @@ namespace org.lb.lbvm.scheme
             if (!(value[1] is Symbol)) throw new CompilerException("Target of set! is not a symbol");
             Symbol target = (Symbol)value[1];
             CompileStatement(value[2], false);
-            Emit("SET " + target.Name);
-            Emit("PUSHVAR " + target.Name);
+            Emit("SET " + target);
+            Emit("PUSHVAR " + target);
         }
 
         private void CompileQuote(List<object> value)
@@ -275,7 +276,7 @@ namespace org.lb.lbvm.scheme
             else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
             else if (o is string) Emit("PUSHSTR \"" + StringObject.Escape((string)o) + "\"");
             else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
-            else if (o is Symbol) Emit("PUSHSYM " + ((Symbol)o).Name);
+            else if (o is Symbol) Emit("PUSHSYM " + o);
             else if (o is List<object>) CompileQuotedList((List<object>)o);
             else throw new CompilerException("TODO: Quoting " + o.GetType());
         }

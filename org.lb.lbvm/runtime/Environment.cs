@@ -4,14 +4,14 @@ namespace org.lb.lbvm.runtime
 {
     internal sealed class EnvironmentStack
     {
-        private readonly Dictionary<int, Variable>[] stack = new Dictionary<int, Variable>[1024];
+        private readonly Dictionary<Symbol, Variable>[] stack = new Dictionary<Symbol, Variable>[1024];
         int count;
-        private Dictionary<int, Variable> TOS;
+        private Dictionary<Symbol, Variable> TOS;
 
         public void PushNew()
         {
             if (count == stack.Length - 1) throw new RuntimeException("Environment stack overflow");
-            if (stack[count] == null) stack[count] = new Dictionary<int, Variable>();
+            if (stack[count] == null) stack[count] = new Dictionary<Symbol, Variable>();
             else stack[count].Clear();
             count++;
             TOS = stack[count - 1];
@@ -29,56 +29,20 @@ namespace org.lb.lbvm.runtime
             return count;
         }
 
-        public bool HasVariable(int symbolNumber)
+        public bool HasVariable(Symbol symbol)
         {
-            return TOS.ContainsKey(symbolNumber);
+            return TOS.ContainsKey(symbol);
         }
 
-        public void Set(int symbolNumber, Variable value)
+        public void Set(Symbol symbol, Variable value)
         {
-            TOS[symbolNumber] = value;
+            TOS[symbol] = value;
         }
 
-        public Variable Get(int symbolNumber, string symbolName)
+        public Variable Get(Symbol symbol)
         {
-            if (!HasVariable(symbolNumber)) throw new RuntimeException("Unknown variable '" + symbolName + "'");
-            return TOS[symbolNumber];
+            if (!HasVariable(symbol)) throw new RuntimeException("Unknown variable '" + symbol + "'");
+            return TOS[symbol];
         }
     }
-
-    //internal sealed class EnvironmentStack
-    //{
-    //    private readonly Stack<Dictionary<int, Variable>> stack = new Stack<Dictionary<int, Variable>>();
-
-    //    public void PushNew()
-    //    {
-    //        stack.Push(new Dictionary<int, Variable>());
-    //    }
-
-    //    public void Pop()
-    //    {
-    //        stack.Pop();
-    //    }
-
-    //    public int Count()
-    //    {
-    //        return stack.Count;
-    //    }
-
-    //    public bool HasVariable(int symbolNumber)
-    //    {
-    //        return stack.Peek().ContainsKey(symbolNumber);
-    //    }
-
-    //    public void Set(int symbolNumber, Variable value)
-    //    {
-    //        stack.Peek()[symbolNumber] = value;
-    //    }
-
-    //    public Variable Get(int symbolNumber, string symbolName)
-    //    {
-    //        if (!HasVariable(symbolNumber)) throw new RuntimeException("Unknown variable '" + symbolName + "'");
-    //        return stack.Peek()[symbolNumber];
-    //    }
-    //}
 }

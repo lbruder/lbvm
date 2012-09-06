@@ -1,25 +1,26 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace org.lb.lbvm
 {
     internal sealed class BytecodeParser
     {
-        private readonly string[] symbolTable;
+        private readonly runtime.Symbol[] symbolTable;
         private readonly byte[] bytecode;
         private readonly InputOutputChannel printer;
         private int offset;
         private readonly List<runtime.Statement> statements = new List<runtime.Statement>();
 
-        private BytecodeParser(byte[] bytecode, string[] symbolTable, InputOutputChannel printer)
+        private BytecodeParser(byte[] bytecode, IEnumerable<string> symbolTable, InputOutputChannel printer)
         {
             this.bytecode = bytecode;
-            this.symbolTable = symbolTable;
+            this.symbolTable = symbolTable.Select(runtime.Symbol.fromString).ToArray();
             this.printer = printer;
             this.offset = 0;
         }
 
-        internal static runtime.Statement[] Parse(byte[] bytecode, string[] symbolTable, InputOutputChannel printer)
+        internal static runtime.Statement[] Parse(byte[] bytecode, IEnumerable<string> symbolTable, InputOutputChannel printer)
         {
             return new BytecodeParser(bytecode, symbolTable, printer).ParseStatements();
         }
@@ -46,8 +47,8 @@ namespace org.lb.lbvm
                 case 0x00: statements.Add(new runtime.EndStatement()); return;
                 case 0x01: statements.Add(new runtime.PopStatement()); return;
                 case 0x02: statements.Add(new runtime.PushintStatement(ReadInt())); return;
-                case 0x03: tmp = ReadInt(); statements.Add(new runtime.DefineStatement(tmp, GetSymbolTableEntry(tmp))); return;
-                case 0x04: tmp = ReadInt(); statements.Add(new runtime.PushvarStatement(tmp, GetSymbolTableEntry(tmp))); return;
+                case 0x03: tmp = ReadInt(); statements.Add(new runtime.DefineStatement(GetSymbolTableEntry(tmp))); return;
+                case 0x04: tmp = ReadInt(); statements.Add(new runtime.PushvarStatement(GetSymbolTableEntry(tmp))); return;
                 case 0x05: statements.Add(new runtime.NumeqStatement()); return;
                 case 0x06: statements.Add(new runtime.AddStatement()); return;
                 case 0x07: statements.Add(new runtime.SubStatement()); return;
@@ -62,8 +63,8 @@ namespace org.lb.lbvm
                 case 0x10: statements.Add(new runtime.JmpStatement(ReadInt())); return;
                 case 0x11: statements.Add(new runtime.PushlabelStatement(ReadInt())); return;
                 case 0x12: statements.Add(new runtime.ImodStatement()); return;
-                case 0x13: tmp = ReadInt(); statements.Add(new runtime.SetStatement(tmp, GetSymbolTableEntry(tmp))); return;
-                case 0x14: tmp = ReadInt(); statements.Add(new runtime.PushsymStatement(tmp, GetSymbolTableEntry(tmp))); return;
+                case 0x13: tmp = ReadInt(); statements.Add(new runtime.SetStatement(GetSymbolTableEntry(tmp))); return;
+                case 0x14: tmp = ReadInt(); statements.Add(new runtime.PushsymStatement(GetSymbolTableEntry(tmp))); return;
                 case 0x15: statements.Add(new runtime.PushboolStatement(true)); return;
                 case 0x16: statements.Add(new runtime.PushboolStatement(false)); return;
                 case 0x17: statements.Add(new runtime.MakeClosureStatement(ReadInt())); return;
@@ -72,7 +73,7 @@ namespace org.lb.lbvm
                 case 0x1a: statements.Add(new runtime.NumgtStatement()); return;
                 case 0x1b: statements.Add(new runtime.NumgeStatement()); return;
                 case 0x1c: statements.Add(new runtime.PushdblStatement(ReadDouble())); return;
-                case 0x1d: tmp = ReadInt(); statements.Add(new runtime.MakevarStatement(tmp, GetSymbolTableEntry(tmp))); return;
+                case 0x1d: tmp = ReadInt(); statements.Add(new runtime.MakevarStatement(GetSymbolTableEntry(tmp))); return;
                 case 0x1e: statements.Add(new runtime.MakepairStatement()); return;
                 case 0x1f: statements.Add(new runtime.IspairStatement()); return;
                 case 0x20: statements.Add(new runtime.Pair1Statement()); return;
@@ -106,7 +107,7 @@ namespace org.lb.lbvm
             return ret;
         }
 
-        private string GetSymbolTableEntry(int no)
+        private runtime.Symbol GetSymbolTableEntry(int no)
         {
             if (no >= 0 && no < symbolTable.Length) return symbolTable[no];
             throw new SymbolTableEntryNotFoundException("Symbol table entry not found");

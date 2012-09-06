@@ -30,10 +30,11 @@ namespace org.lb.lbvm.scheme
             SkipWhitespace();
             if (expressionReader.Peek() == -1) return null;
             char c = Peek();
+            if (c == '#') return ReadSpecial();
             if (c == '\'')
             {
                 expressionReader.Read();
-                return new List<object> { new Symbol("quote"), Read() };
+                return new List<object> { runtime.Symbol.fromString("quote"), Read() };
             }
             if (c == '(') return ReadList();
             if (c == '"') return ReadString();
@@ -43,6 +44,30 @@ namespace org.lb.lbvm.scheme
         private void SkipWhitespace()
         {
             while (Char.IsWhiteSpace(Peek())) expressionReader.Read();
+        }
+
+        private object ReadSpecial()
+        {
+            expressionReader.Read();
+            char c = Peek();
+            if (c == '\\') return ReadChar();
+            return ReadSymbol("#");
+        }
+
+        private object ReadChar()
+        {
+            expressionReader.Read();
+            char c = Peek();
+            if (char.IsLetter(c))
+            {
+                string value = "";
+                while (expressionReader.Peek() != -1 && Peek() != ')' && !Char.IsWhiteSpace(Peek())) value += (char)expressionReader.Read();
+                if (value == "space") value = " ";
+                else if (value == "newline") value = "\n";
+                else if (value.Length > 1) throw new ReaderException("Invalid character constant #\\" + value);
+                return value; // TODO: Value[0];
+            }
+            return ((char)expressionReader.Read()).ToString();
         }
 
         private object ReadList()
@@ -60,9 +85,9 @@ namespace org.lb.lbvm.scheme
             return ret;
         }
 
-        private object ReadSymbol()
+        private object ReadSymbol(string prefix="")
         {
-            string value = "";
+            string value = prefix;
             value += (char)expressionReader.Read();
             while (expressionReader.Peek() != -1 && Peek() != ')' && !Char.IsWhiteSpace(Peek())) value += (char)expressionReader.Read();
 
@@ -73,7 +98,7 @@ namespace org.lb.lbvm.scheme
             bool hasDecimal = value.Contains(".");
             if (!hasDecimal && int.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out i)) return i;
             if (double.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out d)) return d;
-            return new Symbol(value);
+            return runtime.Symbol.fromString(value);
         }
 
         private object ReadString()
