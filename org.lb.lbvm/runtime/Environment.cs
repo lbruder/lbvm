@@ -1,17 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Specialized;
 
 namespace org.lb.lbvm.runtime
 {
     internal sealed class EnvironmentStack
     {
-        private readonly Dictionary<Symbol, Variable>[] stack = new Dictionary<Symbol, Variable>[1024];
+        private readonly HybridDictionary[] stack = new HybridDictionary[1024];
         int count;
-        private Dictionary<Symbol, Variable> TOS;
+        private HybridDictionary TOS;
 
         public void PushNew()
         {
             if (count == stack.Length - 1) throw new exceptions.RuntimeException("Environment stack overflow");
-            if (stack[count] == null) stack[count] = new Dictionary<Symbol, Variable>();
+            if (stack[count] == null) stack[count] = new HybridDictionary();
             else stack[count].Clear();
             count++;
             TOS = stack[count - 1];
@@ -31,7 +31,7 @@ namespace org.lb.lbvm.runtime
 
         public bool HasVariable(Symbol symbol)
         {
-            return TOS.ContainsKey(symbol);
+            return TOS.Contains(symbol);
         }
 
         public void Set(Symbol symbol, Variable value)
@@ -42,7 +42,7 @@ namespace org.lb.lbvm.runtime
         public Variable Get(Symbol symbol)
         {
             if (!HasVariable(symbol)) throw new exceptions.RuntimeException("Unknown variable '" + symbol + "'");
-            return TOS[symbol];
+            return (Variable)TOS[symbol];
         }
     }
 }
