@@ -12,8 +12,6 @@ namespace org.lb.lbvm.scheme
     //vector?
     //procedure?
 
-    // Conversions number->string, string->symbol etc.
-
     // TODO: lambda
     // TODO: let, or, and   /   macro system (if macros, then move COND to macro aswell)
 
