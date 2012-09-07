@@ -70,6 +70,10 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol strrefSymbol = Symbol.fromString("string-ref");
         private readonly Symbol setstrrefSymbol = Symbol.fromString("string-set!");
         private readonly Symbol makestrSymbol = Symbol.fromString("sys:make-string");
+        private readonly Symbol strtonumSymbol = Symbol.fromString("sys:strtonum");
+        private readonly Symbol numtostrSymbol = Symbol.fromString("sys:numtostr");
+        private readonly Symbol strtosymSymbol = Symbol.fromString("string->symbol");
+        private readonly Symbol symtostrSymbol = Symbol.fromString("symbol->string");
         private readonly string[] specialFormSymbols = { "if", "define", "lambda", "quote", "begin", "cond", "set!" };
         private readonly List<Symbol> optimizedFunctionSymbols;
         private readonly Dictionary<Symbol, string> unaryFunctions;
@@ -87,18 +91,20 @@ namespace org.lb.lbvm.scheme
                 leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol, randomSymbol, eqSymbol, nullSymbol,
                 numberpSymbol, stringpSymbol, stringeqSymbol, stringeqciSymbol, stringltSymbol, stringltciSymbol, stringgtSymbol, stringgtciSymbol,
                 stringlengthSymbol, substringSymbol, stringappendSymbol, displaySymbol, charpSymbol, chareqSymbol, chareqciSymbol, charltSymbol,
-                charltciSymbol, chargtSymbol, chargtciSymbol, chartointSymbol, inttocharSymbol, strrefSymbol, setstrrefSymbol, makestrSymbol, beginSymbol };
+                charltciSymbol, chargtSymbol, chargtciSymbol, chartointSymbol, inttocharSymbol, strrefSymbol, setstrrefSymbol, makestrSymbol, beginSymbol,
+                strtonumSymbol, numtostrSymbol, strtosymSymbol, symtostrSymbol };
 
             unaryFunctions = new Dictionary<Symbol, string> { { conspSymbol, "ISPAIR" }, { carSymbol, "PAIR1" }, { cdrSymbol, "PAIR2" }, { displaySymbol, "PRINT" },
                 { randomSymbol, "RANDOM" }, { nullSymbol, "ISNULL" },  { numberpSymbol, "ISNUMBER" }, { stringpSymbol, "ISSTRING" }, { stringlengthSymbol, "STRLEN" },
-                { charpSymbol, "ISCHAR" }, { chartointSymbol, "CHRTOINT" }, { inttocharSymbol, "INTTOCHR" }, { makestrSymbol, "MAKESTR" } };
+                { charpSymbol, "ISCHAR" }, { chartointSymbol, "CHRTOINT" }, { inttocharSymbol, "INTTOCHR" }, { makestrSymbol, "MAKESTR" }, { strtosymSymbol, "STRTOSYM" },
+                { symtostrSymbol, "SYMTOSTR" } };
 
             binaryFunctions = new Dictionary<Symbol, string> { { numericEqualSymbol, "NUMEQUAL" }, { plusSymbol, "ADD" }, { minusSymbol, "SUB" }, { starSymbol, "MUL" },
                 { slashSymbol, "DIV" }, { imodSymbol, "IMOD" }, { idivSymbol, "IDIV" }, { ltSymbol, "NUMLT" }, { leSymbol, "NUMLE" }, { gtSymbol, "NUMGT" }, { geSymbol, "NUMGE" },
                 { consSymbol, "MAKEPAIR" }, { eqSymbol, "OBJEQUAL" }, { stringeqSymbol, "STREQUAL" }, { stringeqciSymbol, "STREQUALCI" }, { stringltSymbol, "STRLT" },
                 { stringltciSymbol, "STRLTCI" }, { stringgtSymbol, "STRGT" }, { stringgtciSymbol, "STRGTCI" }, { stringappendSymbol, "STRAPPEND" }, { chareqSymbol, "CHREQUAL" },
                 { chareqciSymbol, "CHREQUALCI" }, { charltSymbol, "CHRLT" }, { charltciSymbol, "CHRLTCI" }, { chargtSymbol, "CHRGT" }, { chargtciSymbol, "CHRGTCI" },
-                { strrefSymbol, "STRREF" }};
+                { strrefSymbol, "STRREF" }, { strtonumSymbol, "STRTONUM" }, { numtostrSymbol, "NUMTOSTR" } };
 
             trinaryFunctions = new Dictionary<Symbol, string> { { substringSymbol, "SUBSTR" }, { setstrrefSymbol, "SETSTRREF" } };
 

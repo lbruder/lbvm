@@ -727,6 +727,50 @@ namespace org.lb.lbvm.runtime
         }
     }
 
+    internal sealed class StrtosymStatement : Statement
+    {
+        internal StrtosymStatement() : base(1, "STRTOSYM") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            valueStack.Push(Symbol.fromString(((StringObject)valueStack.Pop()).Value));
+            ip += Length;
+        }
+    }
+
+    internal sealed class SymtostrStatement : Statement
+    {
+        internal SymtostrStatement() : base(1, "SYMTOSTR") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            valueStack.Push(new StringObject(((Symbol)valueStack.Pop()).ToString()));
+            ip += Length;
+        }
+    }
+
+    internal sealed class StrtonumStatement : BinaryStatement
+    {
+        internal StrtonumStatement() : base("STRTONUM") { }
+        protected override object operation(object tos, object under_tos)
+        {
+            int basis = (int)tos;
+            string str = ((StringObject)under_tos).Value;
+            if (str.Contains("."))
+                return basis != 10 ? (object)false : double.Parse(str);
+            return Convert.ToInt32(str, basis);
+        }
+    }
+
+    internal sealed class NumtostrStatement : BinaryStatement
+    {
+        internal NumtostrStatement() : base("NUMTOSTR") { }
+        protected override object operation(object tos, object value)
+        {
+            int basis = (int)tos;
+            if (value is double) return basis != 10 ? (object)false : new StringObject(((double)value).ToString(CultureInfo.InvariantCulture));
+            return value is int ? new StringObject(Convert.ToString((int)value, basis)) : (object)false;
+        }
+    }
+
     internal sealed class ErrorStatement : Statement
     {
         internal ErrorStatement() : base(1, "ERROR") { }

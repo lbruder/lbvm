@@ -38,6 +38,8 @@
 (define (integer->char x) (integer->char x))
 (define (string-ref str k) (string-ref str k))
 (define (string-set! str k c) (string-set! str k c))
+(define (string->symbol x) (string->symbol x))
+(define (symbol->string x) (symbol->string x))
 
 (define (char>=? a b) (not (char<? a b)))
 (define (char<=? a b) (not (char>? a b)))
@@ -268,3 +270,13 @@
   
 (define (string . values)
   (list->string values))
+
+(define (string->number n . rest)
+  (if (pair? rest)
+      (sys:strtonum n (car rest))
+      (sys:strtonum n 10)))
+
+(define (number->string n . rest)
+  (if (pair? rest)
+      (sys:numtostr n (car rest))
+      (sys:numtostr n 10)))

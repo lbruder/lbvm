@@ -157,7 +157,8 @@ namespace org.lb.lbvm
                 {"OBJEQUAL", 0x25}, {"ISNULL", 0x26}, {"PRINT", 0x27}, {"ISNUMBER", 0x29}, {"ISSTRING", 0x2a}, {"STREQUAL", 0x2b}, {"STREQUALCI", 0x2c},
                 {"STRLT", 0x2d}, {"STRLTCI", 0x2e}, {"STRGT", 0x2f}, {"STRGTCI", 0x30}, {"STRLEN", 0x31}, {"SUBSTR", 0x32}, {"STRAPPEND", 0x33}, 
                 {"ISCHAR", 0x35}, {"CHREQUAL", 0x36}, {"CHREQUALCI", 0x37}, {"CHRLT", 0x38}, {"CHRLTCI", 0x39}, {"CHRGT", 0x3a}, {"CHRGTCI", 0x3b},
-                {"CHRTOINT", 0x3c}, {"INTTOCHR", 0x3d}, {"STRREF", 0x3e}, {"SETSTRREF", 0x3f}, {"MAKESTR", 0x40}, {"ERROR", 0xff} };
+                {"CHRTOINT", 0x3c}, {"INTTOCHR", 0x3d}, {"STRREF", 0x3e}, {"SETSTRREF", 0x3f}, {"MAKESTR", 0x40}, {"STRTONUM", 0x41}, {"NUMTOSTR", 0x42},
+                {"STRTOSYM", 0x43}, {"SYMTOSTR", 0x44}, {"ERROR", 0xff} };
 
             var UnaryIntOpcodes = new Dictionary<string, byte> { { "PUSHINT", 0x02 }, { "CALL", 0x0e }, { "TAILCALL", 0x0f }, { "MAKECLOSURE", 0x17 } };
             var UnarySymbolOpcodes = new Dictionary<string, byte> { { "DEFINE", 0x03 }, { "PUSHVAR", 0x04 }, { "SET", 0x13 }, { "PUSHSYM", 0x14 }, { "MAKEVAR", 0x1d } };

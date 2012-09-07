@@ -356,19 +356,30 @@ MAKESTR
 POPpt eine Zahl vom Value-Stack und PUSHt einen neuen String mit der gewuenschten Laenge zurueck.
 Der Inhalt des Strings ist nicht definiert.
 
+STRTONUM
+0x41
+POPpt eine Zahl (Basis) und einen String vom Value-Stack, versucht, den String in eine Zahl zur angegebenen Basis
+zu konvertieren und zurueckzuPUSHen. Bei Fliesskommazahlen ist nur Basis 10 definiert.
+
+NUMTOSTR
+0x42
+POPpt eine Zahl (Basis) und eine Zahl (Wert) vom Value-Stack, und konvertiert und PUSHt den Wert als String zur
+angegebenen Basis zurueck.
+
+STRTOSYM
+0x43
+POPpt einen String und PUSHt das entsprechende Symbol auf den Value-Stack.
+
+SYMTOSTR
+0x44
+POPpt ein Symbol und PUSHt den entsprechenden String auf den Value-Stack.
+
 ERROR
 0xff
 Programmfehler
 
 
-
-TODO:
-
-string->number
-number->string
-string->symbol
-symbol->string
-
-Re-write reader in Scheme! :)
-What is needed to re-write the Compiler?
-What is needed to re-write the Assembler?
+TODO: Vectors
+TODO: Ports and port operations
+TODO: Re-write Reader, Compiler and Assembler in Scheme! :)
+TODO: What else?
