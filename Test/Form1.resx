@@ -118,31 +118,14 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="textBox2.Text" xml:space="preserve">
-    <value>(define (average x y)
-  (/ (+ x y) 2))
-
-(define (square x)
-  (* x x))
-
-(define (sqrt x)
-  (define (good-enough? guess)
-    (&lt; (abs (- (square guess) x)) 0.001))
-  (define (improve guess)
-    (average guess (/ x guess)))
-  (define (iter guess)
-    (if (good-enough? guess)
-        guess
-        (iter (improve guess))))
-  (iter 1.0))
-
-(define (isprime n)
-  (define (test i upto)
-    (cond ((&gt;= i upto) #t)
+    <value>(define (isprime n)
+  (define (test i)
+    (cond ((&gt; (* i i) n) #t)
           ((zero? (remainder n i)) #f)
-          (else (test (+ i 2) upto))))
+          (else (test (+ i 2)))))
   (cond ((&lt; n 4) (&gt; n 1))
         ((even? n) #f)
-        (else (test 3 (+ 1 (sqrt n))))))
+        (else (test 3))))
 
 (define (primes upto)
   (filter isprime (range 1 upto)))
