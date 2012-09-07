@@ -8,11 +8,11 @@ namespace org.lb.lbvm
     {
         private readonly runtime.Symbol[] symbolTable;
         private readonly byte[] bytecode;
-        private readonly InputOutputChannel printer;
+        private readonly runtime.OutputPort printer;
         private int offset;
         private readonly List<runtime.Statement> statements = new List<runtime.Statement>();
 
-        private BytecodeParser(byte[] bytecode, IEnumerable<string> symbolTable, InputOutputChannel printer)
+        private BytecodeParser(byte[] bytecode, IEnumerable<string> symbolTable, runtime.OutputPort printer)
         {
             this.bytecode = bytecode;
             this.symbolTable = symbolTable.Select(runtime.Symbol.fromString).ToArray();
@@ -20,7 +20,7 @@ namespace org.lb.lbvm
             this.offset = 0;
         }
 
-        internal static runtime.Statement[] Parse(byte[] bytecode, IEnumerable<string> symbolTable, InputOutputChannel printer)
+        internal static runtime.Statement[] Parse(byte[] bytecode, IEnumerable<string> symbolTable, runtime.OutputPort printer)
         {
             return new BytecodeParser(bytecode, symbolTable, printer).ParseStatements();
         }

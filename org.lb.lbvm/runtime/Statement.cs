@@ -495,8 +495,8 @@ namespace org.lb.lbvm.runtime
 
     internal sealed class PrintStatement : Statement
     {
-        private readonly InputOutputChannel printer;
-        internal PrintStatement(InputOutputChannel printer) : base(1, "PRINT") { this.printer = printer; }
+        private readonly OutputPort printer;
+        internal PrintStatement(OutputPort printer) : base(1, "PRINT") { this.printer = printer; }
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             object o = valueStack.TopOfStack();

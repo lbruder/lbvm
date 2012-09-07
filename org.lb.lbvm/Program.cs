@@ -13,12 +13,7 @@ namespace org.lb.lbvm
         }
     }
 
-    public interface InputOutputChannel
-    {
-        void Print(string value);
-    }
-
-    public sealed class Program : InputOutputChannel
+    public sealed class Program : runtime.OutputPort
     {
         public readonly int Version;
         private readonly runtime.Statement[] Statements;
@@ -62,12 +57,19 @@ namespace org.lb.lbvm
 
         public object Run()
         {
+            var envStack = new runtime.EnvironmentStack();
+            envStack.PushNew(); // Global env
+            return RunWithEnvironmentStack(envStack);
+        }
+
+        internal object RunWithEnvironmentStack(runtime.EnvironmentStack envStack)
+        {
             int ip = 0;
             var valueStack = new runtime.ValueStack();
-            var envStack = new runtime.EnvironmentStack();
             var callStack = new runtime.CallStack();
 
-            envStack.PushNew(); // Global env
+            if (envStack.Count() == 0) throw new exceptions.RuntimeException("Internal error: No global environment present!");
+            if (envStack.Count() > 1) throw new exceptions.RuntimeException("Internal error: Invalid environment stack");
 
             for (var current = Statements[ip]; !(current is runtime.EndStatement); current = Statements[ip])
             {

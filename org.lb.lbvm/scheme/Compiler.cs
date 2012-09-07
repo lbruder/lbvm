@@ -14,7 +14,7 @@ namespace org.lb.lbvm.scheme
 
     // Conversions number->string, string->symbol etc.
 
-    // TODO: lambda, begin
+    // TODO: lambda
     // TODO: let, or, and   /   macro system (if macros, then move COND to macro aswell)
 
     internal sealed class Compiler
@@ -26,6 +26,7 @@ namespace org.lb.lbvm.scheme
         private readonly Symbol quoteSymbol = Symbol.fromString("quote");
         private readonly Symbol elseSymbol = Symbol.fromString("else");
         private readonly Symbol condSymbol = Symbol.fromString("cond");
+        private readonly Symbol beginSymbol = Symbol.fromString("begin");
         private readonly Symbol consSymbol = Symbol.fromString("cons");
         private readonly Symbol conspSymbol = Symbol.fromString("pair?");
         private readonly Symbol carSymbol = Symbol.fromString("car");
@@ -73,6 +74,7 @@ namespace org.lb.lbvm.scheme
         private readonly List<Symbol> optimizedFunctionSymbols;
         private readonly Dictionary<Symbol, string> unaryFunctions;
         private readonly Dictionary<Symbol, string> binaryFunctions;
+        private readonly Dictionary<Symbol, string> trinaryFunctions;
 
         public static IEnumerable<string> Compile(string source)
         {
@@ -85,7 +87,7 @@ namespace org.lb.lbvm.scheme
                 leSymbol, ltSymbol, geSymbol, gtSymbol, elseSymbol, consSymbol, conspSymbol, carSymbol, cdrSymbol, randomSymbol, eqSymbol, nullSymbol,
                 numberpSymbol, stringpSymbol, stringeqSymbol, stringeqciSymbol, stringltSymbol, stringltciSymbol, stringgtSymbol, stringgtciSymbol,
                 stringlengthSymbol, substringSymbol, stringappendSymbol, displaySymbol, charpSymbol, chareqSymbol, chareqciSymbol, charltSymbol,
-                charltciSymbol, chargtSymbol, chargtciSymbol, chartointSymbol, inttocharSymbol, strrefSymbol, setstrrefSymbol, makestrSymbol };
+                charltciSymbol, chargtSymbol, chargtciSymbol, chartointSymbol, inttocharSymbol, strrefSymbol, setstrrefSymbol, makestrSymbol, beginSymbol };
 
             unaryFunctions = new Dictionary<Symbol, string> { { conspSymbol, "ISPAIR" }, { carSymbol, "PAIR1" }, { cdrSymbol, "PAIR2" }, { displaySymbol, "PRINT" },
                 { randomSymbol, "RANDOM" }, { nullSymbol, "ISNULL" },  { numberpSymbol, "ISNUMBER" }, { stringpSymbol, "ISSTRING" }, { stringlengthSymbol, "STRLEN" },
@@ -98,22 +100,28 @@ namespace org.lb.lbvm.scheme
                 { chareqciSymbol, "CHREQUALCI" }, { charltSymbol, "CHRLT" }, { charltciSymbol, "CHRLTCI" }, { chargtSymbol, "CHRGT" }, { chargtciSymbol, "CHRGTCI" },
                 { strrefSymbol, "STRREF" }};
 
+            trinaryFunctions = new Dictionary<Symbol, string> { { substringSymbol, "SUBSTR" }, { setstrrefSymbol, "SETSTRREF" } };
+
             var readSource = new Reader().ReadAll(source).ToList();
             CompileBlock(readSource, false);
             Emit("END");
         }
 
-        private void CompileStatement(object o, bool tailCall)
+        private void CompileStatement(object o, bool tailCall, bool quoting = false)
         {
             if (o is bool) Emit((bool)o ? "PUSHTRUE" : "PUSHFALSE");
             else if (o is int) Emit("PUSHINT " + (int)o);
             else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
             else if (o is string) Emit("PUSHSTR \"" + StringObject.Escape((string)o) + "\"");
             else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
-            else if (o is Symbol) Emit("PUSHVAR " + o);
-            else if (o is List<object>) CompileList((List<object>)o, tailCall);
             else if (o is char) Emit("PUSHCHR " + (byte)(char)o);
-            else throw new exceptions.CompilerException("Internal error: I don't know how to compile object of type " + o.GetType());
+            else if (o is Symbol) Emit((quoting ? "PUSHSYM " : "PUSHVAR ") + o);
+            else if (o is List<object>)
+            {
+                if (quoting) CompileQuotedList((List<object>)o);
+                else CompileList((List<object>)o, tailCall);
+            }
+            else throw new exceptions.CompilerException("Internal error: I don't know how to compile " + (quoting ? "quoted " : "") + "object of type " + o.GetType());
         }
 
         private void Emit(string line)
@@ -127,50 +135,34 @@ namespace org.lb.lbvm.scheme
             if (value.Count == 0) throw new exceptions.CompilerException("Empty list cannot be called as a function");
             object firstValue = value[0];
 
-            if (firstValue is Symbol && unaryFunctions.ContainsKey((Symbol)firstValue))
-            {
-                CompileUnaryOperation(value, unaryFunctions[(Symbol)firstValue]);
-                return;
-            }
-
-            if (firstValue is Symbol && binaryFunctions.ContainsKey((Symbol)firstValue))
-            {
-                CompileBinaryOperation(value, binaryFunctions[(Symbol)firstValue]);
-                return;
-            }
+            if (CompileBuiltinOperation(value, unaryFunctions, 1)) return;
+            if (CompileBuiltinOperation(value, binaryFunctions, 2)) return;
+            if (CompileBuiltinOperation(value, trinaryFunctions, 3)) return;
 
             if (defineSymbol.Equals(firstValue)) CompileDefine(value);
             else if (setSymbol.Equals(firstValue)) CompileSet(value);
             else if (quoteSymbol.Equals(firstValue)) CompileQuote(value);
             else if (ifSymbol.Equals(firstValue)) CompileIf(value, tailCall);
+            else if (beginSymbol.Equals(firstValue)) CompileBegin(value, tailCall);
             else if (condSymbol.Equals(firstValue)) CompileCond(value, tailCall);
-            else if (substringSymbol.Equals(firstValue)) CompileSubstring(value);
-            else if (setstrrefSymbol.Equals(firstValue)) CompileSetStrRef(value);
             else CompileFunctionCall(value, tailCall);
+        }
+
+        private bool CompileBuiltinOperation(List<object> value, Dictionary<Symbol, string> functions, int numberOfParameters)
+        {
+            object firstValue = value[0];
+            if (!(firstValue is Symbol) || !functions.ContainsKey((Symbol)firstValue)) return false;
+            string op = functions[(Symbol)firstValue];
+            AssertParameterCount(numberOfParameters, value.Count - 1, op);
+            for (int i = 1; i <= numberOfParameters; ++i) CompileStatement(value[i], false);
+            Emit(op);
+            return true;
         }
 
         private void CompileDefine(List<object> value)
         {
             if (value[1] is List<object>) CompileFunctionDefinition(value, (List<object>)value[1], value.Skip(2).ToList());
             else CompileVariableDefinition(value);
-        }
-
-        private void CompileSubstring(List<object> value)
-        {
-            AssertParameterCount(value.Count - 1, 3, "substr");
-            CompileStatement(value[1], false);
-            CompileStatement(value[2], false);
-            CompileStatement(value[3], false);
-            Emit("SUBSTR");
-        }
-
-        private void CompileSetStrRef(List<object> value)
-        {
-            AssertParameterCount(value.Count - 1, 3, "string-set!");
-            CompileStatement(value[1], false);
-            CompileStatement(value[2], false);
-            CompileStatement(value[3], false);
-            Emit("SETSTRREF");
         }
 
         private void CompileFunctionDefinition(IEnumerable<object> value, List<object> functionNameAndParameters, List<object> body)
@@ -198,12 +190,7 @@ namespace org.lb.lbvm.scheme
             if (freeVariables.Count > 0) functionLine += " &closingover " + string.Join(" ", freeVariables);
             if (defines.Count > 0) functionLine += " &localdefines " + string.Join(" ", defines);
             Emit(functionLine);
-            for (int i = 0; i < body.Count; ++i)
-            {
-                bool isLastStatement = i == body.Count - 1;
-                CompileStatement(body[i], isLastStatement);
-                if (!isLastStatement) Emit("POP");
-            }
+            CompileBlock(body, true);
             Emit("RET"); // HACK: If last statement was a TAILCALL, the RET is not needed
             Emit("ENDFUNCTION");
             Emit("PUSHVAR " + name);
@@ -248,7 +235,8 @@ namespace org.lb.lbvm.scheme
                 }
                 else if (quoteSymbol.Equals(list[0]))
                 {
-                    // Ignore quoted stuff
+                    if (list[1] is List<object>)
+                        accessedVariables.Add("list");
                 }
                 else // Function call TODO: Lambda
                 {
@@ -293,26 +281,13 @@ namespace org.lb.lbvm.scheme
         private void CompileQuote(List<object> value)
         {
             AssertParameterCount(1, value.Count - 1, "quote");
-            CompileQuotedValue(value[1]);
-        }
-
-        private void CompileQuotedValue(object o)
-        {
-            if (o is bool) Emit((bool)o ? "PUSHTRUE" : "PUSHFALSE");
-            else if (o is int) Emit("PUSHINT " + (int)o);
-            else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
-            else if (o is string) Emit("PUSHSTR \"" + StringObject.Escape((string)o) + "\"");
-            else if (nilSymbol.Equals(o)) Emit("PUSHNIL");
-            else if (o is Symbol) Emit("PUSHSYM " + o);
-            else if (o is char) Emit("PUSHCHR " + (byte)(char)o);
-            else if (o is List<object>) CompileQuotedList((List<object>)o);
-            else throw new exceptions.CompilerException("TODO: Quoting " + o.GetType());
+            CompileStatement(value[1], false, true);
         }
 
         private void CompileQuotedList(List<object> value)
         {
             Emit("PUSHVAR list");
-            foreach (object o in value) CompileQuotedValue(o);
+            foreach (object o in value) CompileStatement(o, false, true);
             Emit("CALL " + value.Count);
         }
 
@@ -327,6 +302,11 @@ namespace org.lb.lbvm.scheme
             Emit(falseLabel + ":");
             CompileStatement(value[3], tailCall);
             Emit(doneLabel + ":");
+        }
+
+        private void CompileBegin(IEnumerable<object> value, bool tailCall)
+        {
+            CompileBlock(value.Skip(1).ToList(), tailCall);
         }
 
         private void AssertParameterCount(int expected, int got, string function)
@@ -376,21 +356,6 @@ namespace org.lb.lbvm.scheme
                 CompileStatement(statements[i], tailCall && isLastStatement);
                 if (!isLastStatement) Emit("POP");
             }
-        }
-
-        private void CompileUnaryOperation(List<object> values, string op)
-        {
-            AssertParameterCount(2, values.Count, op);
-            CompileStatement(values[1], false);
-            Emit(op);
-        }
-
-        private void CompileBinaryOperation(List<object> values, string op)
-        {
-            AssertParameterCount(3, values.Count, op);
-            CompileStatement(values[1], false);
-            CompileStatement(values[2], false);
-            Emit(op);
         }
 
         private void CompileFunctionCall(List<object> value, bool tailCall)

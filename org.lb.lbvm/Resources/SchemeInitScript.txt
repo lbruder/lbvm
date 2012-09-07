@@ -236,12 +236,11 @@
   (for-each set-value (range 0 (string-length str))))
 
 (define (make-string n . rest)
-  (define (with-contents)
-    (define ret (sys:make-string n))
-    (string-fill! ret (car rest))
-    ret)
   (if (pair? rest)
-      (with-contents)
+      (begin
+        (define ret (sys:make-string n))
+        (string-fill! ret (car rest))
+        ret)
       (sys:make-string n)))
 
 (define (string-copy str)

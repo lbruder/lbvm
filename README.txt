@@ -370,4 +370,5 @@ string->symbol
 symbol->string
 
 Re-write reader in Scheme! :)
-What is needed to re-write the Compiler too?
+What is needed to re-write the Compiler?
+What is needed to re-write the Assembler?

@@ -45,6 +45,11 @@ namespace org.lb.lbvm.runtime
         }
     }
 
+    public interface OutputPort
+    {
+        void Print(string value);
+    }
+    
     internal sealed class Pair
     {
         public readonly object First;
