@@ -233,9 +233,9 @@
       c))
 
 (define (string-fill! str c)
-  (define (set-value index)
-    (string-set! str index c))
-  (for-each set-value (range 0 (string-length str))))
+  (for-each 
+    (lambda (i) (string-set! str i c))
+    (range 0 (string-length str))))
 
 (define (make-string n . rest)
   (if (pair? rest)
@@ -247,9 +247,9 @@
 
 (define (string-copy str)
   (define ret (make-string (string-length str)))
-  (define (copy index)
-    (string-set! ret index (string-ref str index)))
-  (for-each copy (range 0 (string-length str)))
+  (for-each 
+    (lambda (i) (string-set! ret i (string-ref str i)))
+    (range 0 (string-length str)))
   ret)
 
 (define (string->list str)

@@ -49,11 +49,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="runtime\ValueStack.cs" />
+    <Compile Include="scheme\CodeInspection.cs" />
     <Compile Include="scheme\Compiler.cs" />
+    <Compile Include="scheme\NameGenerator.cs" />
     <Compile Include="scheme\Reader.cs" />
     <Compile Include="runtime\Statement.cs" />
     <Compile Include="runtime\DataHolders.cs" />
     <Compile Include="runtime\Variable.cs" />
+    <Compile Include="scheme\Symbols.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
