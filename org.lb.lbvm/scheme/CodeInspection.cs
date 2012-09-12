@@ -24,6 +24,7 @@ namespace org.lb.lbvm.scheme
             foreach (object o in body) FindAccessedVariables(o, accessedVariables, localVariablesDefinedInLambda);
             accessedVariables.Remove("nil");
             foreach (string p in parameters) accessedVariables.Remove(p);
+            foreach (string i in localVariablesDefinedInLambda) accessedVariables.Remove(i);
             return accessedVariables;
         }
 

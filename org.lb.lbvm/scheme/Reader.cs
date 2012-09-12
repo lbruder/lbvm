@@ -29,27 +29,20 @@ namespace org.lb.lbvm.scheme
         {
             SkipWhitespace();
             if (expressionReader.Peek() == -1) return null;
-            char c = Peek();
-            if (c == ';')
+            switch (Peek())
             {
-                SkipComment();
-                return Read();
+                case ';': SkipComment(); return Read();
+                case '#': return ReadSpecial();
+                case '\'': expressionReader.Read(); return new List<object> { runtime.Symbol.fromString("quote"), Read() };
+                case '(': return ReadList();
+                case '"': return ReadString();
+                default: return ReadSymbol();
             }
-            if (c == '#') return ReadSpecial();
-            if (c == '\'')
-            {
-                expressionReader.Read();
-                return new List<object> { runtime.Symbol.fromString("quote"), Read() };
-            }
-            if (c == '(') return ReadList();
-            if (c == '"') return ReadString();
-            return ReadSymbol();
         }
 
         private void SkipComment()
         {
             while (Peek() != '\n') expressionReader.Read();
-            SkipWhitespace();
         }
 
         private void SkipWhitespace()

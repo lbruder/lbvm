@@ -62,8 +62,8 @@ namespace org.lb.lbvm
         {
             var envStack = new EnvironmentStack();
             envStack.PushNew(); // Global env
-            if (parameters.Length > 0) envStack.Set(Symbol.fromString("sys:args"), new Variable(CliToVm(parameters)));
-            
+            envStack.Set(Symbol.fromString("sys:args"), new Variable(CliToVm(parameters)));
+
             int ip = 0;
             var valueStack = new ValueStack();
             var callStack = new CallStack();
@@ -88,7 +88,7 @@ namespace org.lb.lbvm
             if (o is bool) return o;
             if (o is int) return o;
             if (o is double) return o;
-            if (o is string) return o;
+            if (o is string) return new StringObject((string)o);
             if (o is char) return o;
             if (o is IEnumerable) return ((IEnumerable)o).Cast<object>().Reverse<object>().Aggregate((object)Nil.GetInstance(), (acc, i) => new Pair(CliToVm(i), acc));
             throw new exceptions.RuntimeException("Parameter of type " + o.GetType() + " could not be converted to VM type");

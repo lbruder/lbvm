@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Windows.Forms;
-
-// ReSharper disable LocalizableElement
 
 namespace Test
 {
@@ -17,21 +13,22 @@ namespace Test
 
         private void button1_Click(object sender, EventArgs e)
         {
-            try
-            {
+            //try
+            //{
                 textBox1.Text = "";
                 var program = org.lb.lbvm.Program.FromSchemeSource(textBox2.Text);
                 program.OnPrint += (s, ev) => Display(ev.Value);
                 var sw = new Stopwatch();
                 sw.Start();
-                object result = program.Run(1, false, "asd", 1.23, new List<int> { 1, 2, 3, 4, 5});
+                //object result = program.Run(1, false, "asd", 1.23, new List<int> { 1, 2, 3, 4, 5});
+                object result = program.Run("(define x \"Hallo,\\\"agga\\\" Welt!\") (display (not #f)) #\\newline a");
                 sw.Stop();
                 Display(result + "\n" + result.GetType() + "\nRuntime: " + sw.Elapsed + "\n");
-            }
-            catch (Exception ex)
-            {
-                Display(ex.Message + "\n");
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Display(ex.Message + "\n");
+            //}
         }
 
         private void Display(string value)
@@ -48,5 +45,3 @@ namespace Test
         }
     }
 }
-
-// ReSharper restore LocalizableElement

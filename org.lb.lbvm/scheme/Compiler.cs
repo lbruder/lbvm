@@ -113,7 +113,6 @@ namespace org.lb.lbvm.scheme
 
             HashSet<string> defines = new HashSet<string>();
             List<string> freeVariables = CodeInspection.FindFreeVariablesInLambda(parameters, body, defines).ToList();
-            foreach (string i in defines) freeVariables.Remove(i);
             freeVariables.Remove(restParameter);
 
             string functionLine = "FUNCTION " + name + " " + string.Join(" ", parameters);
