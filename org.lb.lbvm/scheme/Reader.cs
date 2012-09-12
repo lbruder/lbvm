@@ -11,6 +11,7 @@ namespace org.lb.lbvm.scheme
 
         public IEnumerable<object> ReadAll(string expression)
         {
+            //return (IEnumerable<object>)Program.FromSchemeSource("(sys:read-all-from-string (car sys:args))").Run(expression);
             expressionReader = new StringReader(expression);
             while (expressionReader.Peek() != -1)
             {

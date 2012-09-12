@@ -114,6 +114,7 @@ namespace org.lb.lbvm
                 case 0x42: statements.Add(new runtime.NumtostrStatement()); return;
                 case 0x43: statements.Add(new runtime.StrtosymStatement()); return;
                 case 0x44: statements.Add(new runtime.SymtostrStatement()); return;
+                case 0x45: statements.Add(new runtime.ThrowStatement()); return;
                 default: throw new exceptions.InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
         }

@@ -18,6 +18,14 @@ namespace org.lb.lbvm.exceptions
         }
     }
 
+    public sealed class Error : Exception
+    {
+        public Error(object message)
+            : base(message.ToString())
+        {
+        }
+    }
+
     public sealed class InvalidOpcodeException : Exception
     {
         public InvalidOpcodeException(string message)

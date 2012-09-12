@@ -771,6 +771,15 @@ namespace org.lb.lbvm.runtime
         }
     }
 
+    internal sealed class ThrowStatement : Statement
+    {
+        internal ThrowStatement() : base(1, "THROW") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            throw new exceptions.Error(valueStack.Pop());
+        }
+    }
+
     internal sealed class ErrorStatement : Statement
     {
         internal ErrorStatement() : base(1, "ERROR") { }

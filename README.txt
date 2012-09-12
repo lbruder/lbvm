@@ -374,6 +374,10 @@ SYMTOSTR
 0x44
 POPpt ein Symbol und PUSHt den entsprechenden String auf den Value-Stack.
 
+THROW
+0x45
+POPpt ein Objekt vom ValueStack und bricht das Programm mit dem Objekt als Fehlermeldung ab.
+
 ERROR
 0xff
 Programmfehler

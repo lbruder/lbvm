@@ -71,6 +71,8 @@
 (define (positive? x) (> x 0))
 (define (negative? x) (< x 0))
 
+(define (error . params) (sys:error params))
+
 (define (abs x)
   (if (positive? x)
       x
@@ -386,6 +388,7 @@
         ((char=? c #\() ((src 'get)) (read-list nil))
         ((char=? c #\") ((src 'get)) (read-string ""))
         (else (read-symbol ""))))
+
 (define (sys:read-all-from-string str)
   (define (cons-unless-nil a b)
     (if (null? a)
@@ -396,5 +399,3 @@
         (reverse acc)
         (iter (cons-unless-nil (sys:read-from-character-source src) acc) src)))
   (iter nil (sys:string->character-source str)))
-
-(define (error str) (display str) 'error) ; TODO

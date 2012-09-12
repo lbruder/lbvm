@@ -54,6 +54,7 @@ namespace org.lb.lbvm.scheme
             new FunctionDefinition(1, "string->symbol", "STRTOSYM"),
             new FunctionDefinition(1, "symbol->string", "SYMTOSTR"),
             new FunctionDefinition(1, "null?", "ISNULL"),
+            new FunctionDefinition(1, "sys:error", "THROW"),
 
             new FunctionDefinition(2, "=", "NUMEQUAL"),
             new FunctionDefinition(2, "+", "ADD"),
