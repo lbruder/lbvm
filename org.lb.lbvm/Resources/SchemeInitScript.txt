@@ -280,3 +280,52 @@
   (if (pair? rest)
       (sys:numtostr n (car rest))
       (sys:numtostr n 10)))
+
+(define (append . lsts)
+  (define (iter acc current)
+    (if (pair? current)
+        (iter (cons (car current) acc) (cdr current))
+        acc))
+  (reverse (fold iter nil lsts)))
+
+(define (sort lst f)
+  (if (pair? lst)
+      (begin
+        (define pivot (car lst))
+        (define smaller-part (filter (lambda (x) (f x pivot)) (cdr lst)))
+        (define larger-part (filter (lambda (x) (not (f x pivot))) (cdr lst)))
+        (append (sort smaller-part f) (list pivot) (sort larger-part f)))
+      lst))
+
+(define (sys:string->character-source str)
+  (define position 0)
+  (define (get)
+    (if (< position (string-length str))
+        (begin
+          (set! position (+ position 1))
+          (string-ref str (- position 1)))
+        'eof))
+  (define (peek)
+    (if (< position (string-length str))
+        (string-ref str position)
+        'eof))
+  (lambda (command)
+    (cond ((eq? command 'get) get)
+          ((eq? command 'peek) peek)
+          (else (lambda () 'eof)))))
+
+(define (sys:read-from-character-source src)
+  ((src 'get)))
+
+(define (sys:read-all-from-string str)
+  (define (cons-unless-nil a b)
+    (if (null? a)
+        b
+        (cons a b)))
+  (define (iter acc src)
+    (if (eq? 'eof ((src 'peek)))
+        (reverse acc)
+        (iter (cons-unless-nil (sys:read-from-character-source src) acc) src)))
+  (iter nil (sys:string->character-source str)))
+
+(sys:read-all-from-string "Hallo, Welt!")

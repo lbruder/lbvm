@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows.Forms;
 
 // ReSharper disable LocalizableElement
@@ -22,7 +24,7 @@ namespace Test
                 program.OnPrint += (s, ev) => Display(ev.Value);
                 var sw = new Stopwatch();
                 sw.Start();
-                object result = program.Run();
+                object result = program.Run(1, false, "asd", 1.23, new List<int> { 1, 2, 3, 4, 5});
                 sw.Stop();
                 Display(result + "\n" + result.GetType() + "\nRuntime: " + sw.Elapsed + "\n");
             }

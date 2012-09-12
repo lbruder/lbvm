@@ -379,7 +379,28 @@ ERROR
 Programmfehler
 
 
+
+
 TODO: Vectors
 TODO: Ports and port operations
-TODO: Re-write Reader, Compiler and Assembler in Scheme! :)
-TODO: What else?
+TODO: Programs as first-class objects (sys:make-program, sys:execute-program, sys:program?, syntax for reader/writer...)
+
+
+Needed to re-write Reader in Scheme:
+- (error . parameters)
+
+
+Needed to re-write Compiler in Scheme:
+- boolean?
+- symbol?
+- integer?
+- real?
+- (error . parameters)
+
+
+Needed to re-write Assembler in Scheme:
+- (sys:integer->bytes value)
+- (sys:real->bytes value)
+- (sys:string->bytes value)
+- (sys:make-program bytecode symbols)
+- (error . parameters)

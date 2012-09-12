@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -49,8 +50,8 @@ namespace org.lb.lbvm.runtime
     {
         void Print(string value);
     }
-    
-    internal sealed class Pair
+
+    internal sealed class Pair : IEnumerable<object>
     {
         public readonly object First;
         public readonly object Second;
@@ -59,6 +60,23 @@ namespace org.lb.lbvm.runtime
         {
             this.First = first;
             this.Second = second;
+        }
+
+        public IEnumerator<object> GetEnumerator()
+        {
+            yield return First;
+            for (object i = Second; ; i = ((Pair)i).Second)
+            {
+                if (i is Pair)
+                    yield return ((Pair)i).First;
+                else if (i is Nil)
+                    break;
+                else
+                {
+                    yield return i;
+                    break;
+                }
+            }
         }
 
         public override string ToString()
@@ -86,6 +104,11 @@ namespace org.lb.lbvm.runtime
             }
             sb.Append(")");
             return sb.ToString();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 

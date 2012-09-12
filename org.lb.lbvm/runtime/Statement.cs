@@ -755,7 +755,7 @@ namespace org.lb.lbvm.runtime
             int basis = (int)tos;
             string str = ((StringObject)under_tos).Value;
             if (str.Contains("."))
-                return basis != 10 ? (object)false : double.Parse(str);
+                return basis != 10 ? (object)false : double.Parse(str, NumberStyles.Any, CultureInfo.InvariantCulture);
             return Convert.ToInt32(str, basis);
         }
     }

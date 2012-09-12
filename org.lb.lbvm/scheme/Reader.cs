@@ -30,6 +30,11 @@ namespace org.lb.lbvm.scheme
             SkipWhitespace();
             if (expressionReader.Peek() == -1) return null;
             char c = Peek();
+            if (c == ';')
+            {
+                SkipComment();
+                return Read();
+            }
             if (c == '#') return ReadSpecial();
             if (c == '\'')
             {
@@ -39,6 +44,12 @@ namespace org.lb.lbvm.scheme
             if (c == '(') return ReadList();
             if (c == '"') return ReadString();
             return ReadSymbol();
+        }
+
+        private void SkipComment()
+        {
+            while (Peek() != '\n') expressionReader.Read();
+            SkipWhitespace();
         }
 
         private void SkipWhitespace()
