@@ -17,6 +17,7 @@ namespace Test
             {
                 textBox1.Text = "";
                 var program = org.lb.lbvm.Program.FromSchemeSource(textBox2.Text);
+                //using (var writer = System.IO.File.OpenWrite("test.lbvm")) program.WriteToStream(writer);
                 program.OnPrint += (s, ev) => Display(ev.Value);
                 var sw = new Stopwatch();
                 sw.Start();

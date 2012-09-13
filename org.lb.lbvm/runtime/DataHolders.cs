@@ -145,12 +145,9 @@ namespace org.lb.lbvm.runtime
 
         public static string Escape(string value)
         {
-            return value
-                .Replace("\\", "\\\\")
-                .Replace("\"", "\\\"")
-                .Replace("\n", "\\n")
-                .Replace("\r", "\\r")
-                .Replace("\t", "\\t");
+            return "\""
+                + value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t")
+                + "\"";
         }
 
         public static string Unescape(string value)

@@ -40,6 +40,10 @@
 (define (string-set! str k c) (string-set! str k c))
 (define (string->symbol x) (string->symbol x))
 (define (symbol->string x) (symbol->string x))
+(define (boolean? x) (boolean? x))
+(define (symbol? x) (symbol? x))
+(define (integer? x) (integer? x))
+(define (real? x) (real? x))
 
 (define (char>=? a b) (not (char<? a b)))
 (define (char<=? a b) (not (char>? a b)))

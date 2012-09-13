@@ -115,6 +115,10 @@ namespace org.lb.lbvm
                 case 0x43: statements.Add(new runtime.StrtosymStatement()); return;
                 case 0x44: statements.Add(new runtime.SymtostrStatement()); return;
                 case 0x45: statements.Add(new runtime.ThrowStatement()); return;
+                case 0x46: statements.Add(new runtime.IsBoolStatement()); return;
+                case 0x47: statements.Add(new runtime.IsSymbolStatement()); return;
+                case 0x48: statements.Add(new runtime.IsIntStatement()); return;
+                case 0x49: statements.Add(new runtime.IsFloatStatement()); return;
                 default: throw new exceptions.InvalidOpcodeException("Invalid opcode: 0x" + opcode.ToString("x2"));
             }
         }

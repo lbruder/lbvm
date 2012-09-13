@@ -378,6 +378,22 @@ THROW
 0x45
 POPpt ein Objekt vom ValueStack und bricht das Programm mit dem Objekt als Fehlermeldung ab.
 
+ISBOOL
+0x46
+POPpt ein Objekt vom ValueStack und PUSHt true zurück, wenn es ein Bool war, sonst false
+
+ISSYMBOL
+0x47
+POPpt ein Objekt vom ValueStack und PUSHt true zurück, wenn es ein Symbol war, sonst false
+
+ISINT
+0x48
+POPpt ein Objekt vom ValueStack und PUSHt true zurück, wenn es ein Integer war, sonst false
+
+ISFLOAT
+0x49
+POPpt ein Objekt vom ValueStack und PUSHt true zurück, wenn es ein Fliesskommawert war, sonst false
+
 ERROR
 0xff
 Programmfehler
@@ -385,21 +401,11 @@ Programmfehler
 
 
 
+TODO: Re-Write compiler in Scheme! :)
+
 TODO: Vectors
 TODO: Ports and port operations
 TODO: Programs as first-class objects (sys:make-program, sys:execute-program, sys:program?, syntax for reader/writer...)
-
-
-Needed to re-write Reader in Scheme:
-- (error . parameters)
-
-
-Needed to re-write Compiler in Scheme:
-- boolean?
-- symbol?
-- integer?
-- real?
-- (error . parameters)
 
 
 Needed to re-write Assembler in Scheme:
@@ -407,4 +413,3 @@ Needed to re-write Assembler in Scheme:
 - (sys:real->bytes value)
 - (sys:string->bytes value)
 - (sys:make-program bytecode symbols)
-- (error . parameters)

@@ -508,7 +508,7 @@ namespace org.lb.lbvm.runtime
 
     internal sealed class PushstrStatement : Statement
     {
-        internal PushstrStatement(string value) : base(5 + value.Length, "PUSHSTR \"" + StringObject.Escape(value) + "\"") { this.value = new StringObject(value); }
+        internal PushstrStatement(string value) : base(5 + value.Length, "PUSHSTR " + StringObject.Escape(value)) { this.value = new StringObject(value); }
         private readonly StringObject value;
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
@@ -777,6 +777,46 @@ namespace org.lb.lbvm.runtime
         internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
         {
             throw new exceptions.Error(valueStack.Pop());
+        }
+    }
+
+    internal sealed class IsBoolStatement : Statement
+    {
+        internal IsBoolStatement() : base(1, "ISBOOL") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            valueStack.Push(valueStack.Pop() is bool);
+            ip += Length;
+        }
+    }
+
+    internal sealed class IsSymbolStatement : Statement
+    {
+        internal IsSymbolStatement() : base(1, "ISSYMBOL") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            valueStack.Push(valueStack.Pop() is Symbol);
+            ip += Length;
+        }
+    }
+
+    internal sealed class IsIntStatement : Statement
+    {
+        internal IsIntStatement() : base(1, "ISINT") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            valueStack.Push(valueStack.Pop() is int);
+            ip += Length;
+        }
+    }
+
+    internal sealed class IsFloatStatement : Statement
+    {
+        internal IsFloatStatement() : base(1, "ISFLOAT") { }
+        internal override void Execute(ref int ip, ValueStack valueStack, EnvironmentStack envStack, CallStack callStack)
+        {
+            valueStack.Push(valueStack.Pop() is double);
+            ip += Length;
         }
     }
 

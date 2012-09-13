@@ -31,7 +31,7 @@ namespace org.lb.lbvm.scheme
             if (o is bool) Emit((bool)o ? "PUSHTRUE" : "PUSHFALSE");
             else if (o is int) Emit("PUSHINT " + (int)o);
             else if (o is double) Emit("PUSHDBL " + ((double)o).ToString(CultureInfo.InvariantCulture));
-            else if (o is string) Emit("PUSHSTR \"" + StringObject.Escape((string)o) + "\"");
+            else if (o is string) Emit("PUSHSTR " + StringObject.Escape((string)o));
             else if (Symbols.NilSymbol.Equals(o)) Emit("PUSHNIL");
             else if (o is char) Emit("PUSHCHR " + (byte)(char)o);
             else if (o is Symbol) Emit((quoting ? "PUSHSYM " : "PUSHVAR ") + o);
